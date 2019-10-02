@@ -20,17 +20,12 @@ public class World
 		{
 			for (int y = -renderDistance; y < renderDistance; y++)
 			{
-				createChunk(new Vector2Int(x, y), true);
+				createChunk(new Vector2Int(x, y));
 			}
-		}
-
-		foreach (Chunk chunk in _chunks.Values)
-		{
-			chunk.enable();
 		}
 	}
 
-	private void createChunk(Vector2Int pos, bool worldInit)
+	private void createChunk(Vector2Int pos)
 	{
 		if (_chunks.ContainsKey(pos))
 		{
@@ -42,7 +37,7 @@ public class World
 		
 		_chunks.Add(pos, chunk.GetComponent<Chunk>());
 		
-		getChunk(pos).init(pos, this, getNoise(pos), worldInit);
+		getChunk(pos).init(pos, getNoise(pos));
 	}
 
 	private void destroyChunk(Vector2Int pos)

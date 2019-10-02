@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshCollider), typeof(MeshRenderer))]
@@ -8,26 +7,22 @@ public class Chunk : MonoBehaviour
 	private MeshCollider _meshCollider;
 	private MeshRenderer _meshRenderer;
 	private Mesh _mesh;
-
-	private World _world;
 	private BlockType[,,] blocks {get; } = new BlockType[16, 256, 16];
 
 	private Vector2Int chunkPos {get; set;}
 
-	public void init(Vector2Int pos, World world, float[,] noise, bool worldInit = false)
+	public void init(Vector2Int pos, float[,] noise)
 	{
 		gameObject.layer = 8;
 		
 		_mesh = new Mesh();
+		
 		GetComponent<MeshFilter>().mesh = _mesh;
 		
 		_meshRenderer = GetComponent<MeshRenderer>();
-		
 		_meshCollider = GetComponent<MeshCollider>();
-		_meshCollider.sharedMesh = _mesh;
 		
 		chunkPos = pos;
-		_world = world;
 		
 		for (int x = 0; x < 16; x++)
 		{
@@ -39,15 +34,9 @@ public class Chunk : MonoBehaviour
 				}
 			}
 		}
-
-		if (worldInit) return;
 		
-		enable();
-		
-		rebuildNeighbor(Neighbor.XPOS);
-		rebuildNeighbor(Neighbor.XNEG);
-		rebuildNeighbor(Neighbor.YPOS);
-		rebuildNeighbor(Neighbor.YNEG);
+		rebuildMesh();
+		_meshRenderer.enabled = true;
 	}
 
 	private void rebuildMesh()
@@ -72,8 +61,7 @@ public class Chunk : MonoBehaviour
 
 					// x + 1
 					{
-						Chunk nextChunk = _world.getChunk(new Vector2Int(chunkPos.x + 1, chunkPos.y));
-						if ((x + 1 < 16 && blocks[x + 1, y, z] == null) || (x + 1 == 16 && nextChunk && nextChunk.blocks[0, y, z] == null))
+						if ((x + 1 < 16 && blocks[x + 1, y, z] == null) || x + 1 == 16)
 						{
 							vCount += 4;
 							vertices.Add(new Vector3(x+1, y, z));
@@ -89,8 +77,7 @@ public class Chunk : MonoBehaviour
 					}
 					// x - 1
 					{
-						Chunk nextChunk = _world.getChunk(new Vector2Int(chunkPos.x - 1, chunkPos.y));
-						if ((x - 1 > -1 && blocks[x - 1, y, z] == null) || (x - 1 == -1 && nextChunk && nextChunk.blocks[15, y, z] == null))
+						if ((x - 1 > -1 && blocks[x - 1, y, z] == null) || x - 1 == -1)
 						{
 							vCount += 4;
 							vertices.Add(new Vector3(x, y, z + 1));
@@ -138,8 +125,7 @@ public class Chunk : MonoBehaviour
 					}
 					// z + 1
 					{
-						Chunk nextChunk = _world.getChunk(new Vector2Int(chunkPos.x, chunkPos.y + 1));
-						if ((z + 1 < 16 && blocks[x, y, z + 1] == null) || (z + 1 == 16 && nextChunk && nextChunk.blocks[x, y, 0] == null))
+						if ((z + 1 < 16 && blocks[x, y, z + 1] == null) || z + 1 == 16)
 						{
 							vCount += 4;
 							vertices.Add(new Vector3(x + 1, y, z + 1));
@@ -155,8 +141,7 @@ public class Chunk : MonoBehaviour
 					}
 					// z - 1
 					{
-						Chunk nextChunk = _world.getChunk(new Vector2Int(chunkPos.x, chunkPos.y - 1));
-						if ((z - 1 > -1 && blocks[x, y, z - 1] == null) || (z - 1 == -1 && nextChunk && nextChunk.blocks[x, y, 15] == null))
+						if ((z - 1 > -1 && blocks[x, y, z - 1] == null) || z - 1 == -1)
 						{
 							vCount += 4;
 							vertices.Add(new Vector3(x, y, z));
@@ -198,58 +183,5 @@ public class Chunk : MonoBehaviour
 		setBlock(pos, blockType);
 		
 		rebuildMesh();
-
-		if (pos.x + 1 == 16)
-		{
-			rebuildNeighbor(Neighbor.XPOS);
-		}
-		if (pos.x - 1 == -1)
-		{
-			rebuildNeighbor(Neighbor.XNEG);
-		}
-		if (pos.z + 1 == 16)
-		{
-			rebuildNeighbor(Neighbor.YPOS);
-		}
-		if (pos.z - 1 == -1)
-		{
-			rebuildNeighbor(Neighbor.YNEG);
-		}
-	}
-
-	public void enable()
-	{
-		_meshRenderer.enabled = true;
-		
-		rebuildMesh();
-	}
-
-	private void rebuildNeighbor(Neighbor neighbor)
-	{
-		switch (neighbor)
-		{
-			case Neighbor.XPOS:
-				_world.getChunk(new Vector2Int(chunkPos.x + 1, chunkPos.y)).rebuildMesh();
-				break;
-			case Neighbor.XNEG:
-				_world.getChunk(new Vector2Int(chunkPos.x - 1, chunkPos.y)).rebuildMesh();
-				break;
-			case Neighbor.YPOS:
-				_world.getChunk(new Vector2Int(chunkPos.x, chunkPos.y + 1)).rebuildMesh();
-				break;
-			case Neighbor.YNEG:
-				_world.getChunk(new Vector2Int(chunkPos.x, chunkPos.y - 1)).rebuildMesh();
-				break;
-			default:
-				throw new ArgumentOutOfRangeException(nameof(neighbor), neighbor, null);
-		}
-	}
-
-	private enum Neighbor
-	{
-		XPOS,
-		XNEG,
-		YPOS,
-		YNEG
 	}
 }
