@@ -38,7 +38,7 @@ public class World
 		
 		chunk.init();
 		
-		ThreadPool.QueueUserWorkItem(state => generateChunk(chunk, Biomes.generateChunkBlocks(chunkPos, BiomeType.GREENHILLS2), _applyQueue));
+		ThreadPool.QueueUserWorkItem(state => generateChunk(chunk, Biomes.generateChunkBlocks(chunkPos, BiomeType.MOUNTAINS), _applyQueue));
 	}
 
 	private void destroyChunk(Vector2Int chunkPos)

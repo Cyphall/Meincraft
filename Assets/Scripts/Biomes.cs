@@ -16,11 +16,8 @@ public static class Biomes
 		BiomeParams biomeParams;
 		switch (biomeType)
 		{
-			case BiomeType.GREENHILLS:
-				biomeParams = greenHills(chunkPos);
-				break;
-			case BiomeType.GREENHILLS2:
-				biomeParams = greenHills2(chunkPos);
+			case BiomeType.MOUNTAINS:
+				biomeParams = mountains(chunkPos);
 				break;
 			default:
 				throw new ArgumentOutOfRangeException(nameof(biomeType), biomeType, null);
@@ -32,22 +29,29 @@ public static class Biomes
 		{
 			for (int z = 0; z < 16; z++)
 			{
-				int maxY = biomeParams.minY + (int) (biomeParams.heightMap[x, z] * biomeParams.amplitude);
-				maxY = Math.Min(maxY, 256);
+				int targetY = biomeParams.minY + (int) (biomeParams.heightMap[x, z] * (biomeParams.maxY - biomeParams.minY));
+				targetY = Math.Min(targetY, 256);
 				
-				for (int y = 0; y < maxY; y++)
+				for (int y = 0; y < targetY; y++)
 				{
-					if (y < maxY - 4)
+					if (targetY > biomeParams.rockMin + (biomeParams.rockMax - biomeParams.rockMin) * getNoise(chunkPos, new Vector2Int(x, z), 1, 1, 4))
 					{
 						blocks[x, y, z] = BlockType.STONE;
 					}
-					else if (y < maxY - 1)
-					{
-						blocks[x, y, z] = BlockType.DIRT;
-					}
 					else
 					{
-						blocks[x, y, z] = BlockType.GRASS;
+						if (y < targetY - 4)
+						{
+							blocks[x, y, z] = BlockType.STONE;
+						}
+						else if (y < targetY - 1)
+						{
+							blocks[x, y, z] = BlockType.DIRT;
+						}
+						else
+						{
+							blocks[x, y, z] = BlockType.GRASS;
+						}
 					}
 				}
 			}
@@ -56,76 +60,63 @@ public static class Biomes
 		return blocks;
 	}
 	
-	private static BiomeParams greenHills(Vector2Int chunkPos)
+	private static BiomeParams mountains(Vector2Int chunkPos)
 	{
 		BiomeParams biomeParams = new BiomeParams
 		{
 			heightMap = new float[16, 16],
+			
 			minY = 60,
-			amplitude = 60
+			maxY = 180,
+			
+			rockMin = 120,
+			rockMax = 140
 		};
-		
-		float[,] a = getNoise(chunkPos, _seed, 8);
-		float[,] b = getNoise(chunkPos, _seed / 1.123f, 5 / 1.456f);
+
+		int octaves = 5;
+
+		float lacunarity = 2f;
+		float persistance = 0.5f;
 		
 		for (int x = 0; x<16; x++)
 		{
 			for (int y = 0; y<16; y++)
 			{
-				biomeParams.heightMap[x, y] = (a[x, y] + b[x, y]) / 2;
+				float divider = 0;
+				
+				for (int i = 0; i < octaves; i++)
+				{
+					float frequency = Mathf.Pow(lacunarity, i);
+					float amplitude = Mathf.Pow(persistance, i);
+					biomeParams.heightMap[x, y] += getNoise(chunkPos, new Vector2Int(x, y), frequency, amplitude, 8);
+					divider += amplitude;
+				}
+
+				biomeParams.heightMap[x, y] /= divider;
+				biomeParams.heightMap[x, y] += 0.5f;
 			}
 		}
 
 		return biomeParams;
 	}
 	
-	private static BiomeParams greenHills2(Vector2Int chunkPos)
+	private static float getNoise(Vector2Int chunkPos, Vector2Int blockPos, float frequency, float amplitude, float scale)
 	{
-		BiomeParams biomeParams = new BiomeParams
-		{
-			heightMap = new float[16, 16],
-			minY = 60,
-			amplitude = 30
-		};
-		
-		float[,] a = getNoise(chunkPos, _seed, 4);
-
-		for (int x = 0; x<16; x++)
-		{
-			for (int y = 0; y<16; y++)
-			{
-				biomeParams.heightMap[x, y] = a[x, y];
-			}
-		}
-		
-		return biomeParams;
-	}
-	
-	private static float[,] getNoise(Vector2Int chunkPos, Vector2 seed, float scale)
-	{
-		float[,] noise = new float[16, 16];
-
-		for (int x = 0; x < 16; x++)
-		{
-			for (int y = 0; y < 16; y++)
-			{
-				noise[x, y] = Mathf.PerlinNoise((seed.x + chunkPos.x + x / 16f) / scale, (seed.y + chunkPos.y + y / 16f) / scale);
-			}
-		}
-
-		return noise;
+		return (Math.Min(Mathf.PerlinNoise((_seed.x + chunkPos.x + blockPos.x / 16f) * frequency / scale, (_seed.y + chunkPos.y + blockPos.y / 16f) * frequency / scale), 1) - 0.5f) * amplitude;
 	}
 }
 
 public enum BiomeType
 {
-	GREENHILLS,
-	GREENHILLS2
+	MOUNTAINS
 }
 
 internal struct BiomeParams
 {
 	public float[,] heightMap;
 	public int minY;
-	public int amplitude;
+	public int maxY;
+
+	public int rockMin;
+	public int rockMax;
 }
