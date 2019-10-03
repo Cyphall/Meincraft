@@ -110,15 +110,12 @@ public class World
 			}
 		}
 
-		int destroyed = 0;
 		foreach (Vector2Int chunkPos in _chunkRemoveQueue)
 		{
 			_chunks.Remove(chunkPos);
-			destroyed++;
 		}
 		_chunkRemoveQueue.Clear();
 
-		int created = 0;
 		for (int x = chunkWithPlayer.x ; x <= chunkWithPlayer.x + RENDER_DISTANCE; x++)
 		{
 			for (int y = chunkWithPlayer.y ; y <= chunkWithPlayer.y + RENDER_DISTANCE; y++)
@@ -135,28 +132,22 @@ public class World
 
 				if (!_chunks.ContainsKey(pos1))
 				{
-					created++;
 					createChunk(pos1);
 				}
 				if (!_chunks.ContainsKey(pos2))
 				{
-					created++;
 					createChunk(pos2);
 				}
 				if (!_chunks.ContainsKey(pos3))
 				{
-					created++;
 					createChunk(pos3);
 				}
 				if (!_chunks.ContainsKey(pos4))
 				{
-					created++;
 					createChunk(pos4);
 				}
 			}
 		}
-		
-		Debug.Log($"Destroyed: {destroyed}, Created: {created}");
 		
 		if (_player.transform.position.y < -10)
 		{
