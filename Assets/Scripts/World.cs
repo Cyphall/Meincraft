@@ -11,27 +11,14 @@ public class World
 	private Dictionary<Vector2Int, Chunk> _chunks = new Dictionary<Vector2Int, Chunk>();
 	private ConcurrentQueue<Chunk> _applyQueue = new ConcurrentQueue<Chunk>();
 
+	private List<Vector2Int> _chunkRemoveQueue = new List<Vector2Int>();
+	
+	private const float RENDER_DISTANCE = 8 - 0.1f;
+
 	public World(GameObject chunkPrefab, GameObject playerPrefab)
 	{
 		_chunkPrefab = chunkPrefab;
 		Biomes.initSeed();
-
-		const int renderDistance = 8;
-
-		for (int x = 0; x < renderDistance; x++)
-		{
-			for (int y = -renderDistance; y < renderDistance; y++)
-			{
-				createChunk(new Vector2Int(x, y));
-			}
-		}
-		for (int x = -renderDistance; x < 0; x++)
-		{
-			for (int y = -renderDistance; y < renderDistance; y++)
-			{
-				createChunk(new Vector2Int(x, y));
-			}
-		}
 		
 		_player = Object.Instantiate(playerPrefab, new Vector3(8, 256, 8), Quaternion.identity).GetComponent<Player>();
 		_player.setWorld(this);
@@ -64,7 +51,7 @@ public class World
 
 		Object.Destroy(_chunks[chunkPos].gameObject);
 		
-		_chunks.Remove(chunkPos);
+		_chunkRemoveQueue.Add(chunkPos);
 	}
 
 	public void placeBlock(Vector3Int blockPos, BlockType blockType)
@@ -100,17 +87,88 @@ public class World
 
 		return localBlockPos;
 	}
+	
+	private static Vector2Int chunkPosFromPlayerPos(Vector3 playerPos)
+	{
+		Vector2Int chunkPos = Vector2Int.zero;
+
+		chunkPos.x = Mathf.FloorToInt(playerPos.x / 16.0f);
+		chunkPos.y = Mathf.FloorToInt(playerPos.z / 16.0f);
+
+		return chunkPos;
+	}
 
 	public void fixedUpdate()
 	{
+		Vector2Int chunkWithPlayer = chunkPosFromPlayerPos(_player.transform.position);
+
+		foreach (KeyValuePair<Vector2Int, Chunk> pair in _chunks)
+		{
+			if (Vector2Int.Distance(pair.Key, chunkWithPlayer) > RENDER_DISTANCE)
+			{
+				destroyChunk(pair.Key);
+			}
+		}
+
+		int destroyed = 0;
+		foreach (Vector2Int chunkPos in _chunkRemoveQueue)
+		{
+			_chunks.Remove(chunkPos);
+			destroyed++;
+		}
+		_chunkRemoveQueue.Clear();
+
+		int created = 0;
+		for (int x = chunkWithPlayer.x ; x <= chunkWithPlayer.x + RENDER_DISTANCE; x++)
+		{
+			for (int y = chunkWithPlayer.y ; y <= chunkWithPlayer.y + RENDER_DISTANCE; y++)
+			{
+				if ((chunkWithPlayer.x - x) * (chunkWithPlayer.x - x) + (chunkWithPlayer.y - y) * (chunkWithPlayer.y - y) > RENDER_DISTANCE * RENDER_DISTANCE) continue;
+				
+				int xSym = chunkWithPlayer.x - (x - chunkWithPlayer.x);
+				int ySym = chunkWithPlayer.y - (y - chunkWithPlayer.y);
+				
+				Vector2Int pos1 = new Vector2Int(x, y);
+				Vector2Int pos2 = new Vector2Int(x, ySym);
+				Vector2Int pos3 = new Vector2Int(xSym, y);
+				Vector2Int pos4 = new Vector2Int(xSym, ySym);
+
+				if (!_chunks.ContainsKey(pos1))
+				{
+					created++;
+					createChunk(pos1);
+				}
+				if (!_chunks.ContainsKey(pos2))
+				{
+					created++;
+					createChunk(pos2);
+				}
+				if (!_chunks.ContainsKey(pos3))
+				{
+					created++;
+					createChunk(pos3);
+				}
+				if (!_chunks.ContainsKey(pos4))
+				{
+					created++;
+					createChunk(pos4);
+				}
+			}
+		}
+		
+		Debug.Log($"Destroyed: {destroyed}, Created: {created}");
+		
 		if (_player.transform.position.y < -10)
 		{
-			_player.transform.position = _player.spawnPos;
+			Transform transform = _player.transform;
+			Vector3 position = transform.position;
+			transform.position = new Vector3(position.x, _player.spawnPos.y, position.z);
 		}
 		
 		if (_applyQueue.TryDequeue(out Chunk chunk))
 		{
-			chunk.applyMesh();
+			if (chunk)
+				chunk.applyMesh();
 		}
 	}
 

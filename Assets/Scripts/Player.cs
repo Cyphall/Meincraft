@@ -67,8 +67,9 @@ public class Player : MonoBehaviour
 		}
 		if (Input.GetMouseButtonDown(1) && lookingAtBlock)
 		{
-			Vector3Int newPos = getBlockLookedAt(raycastHit) + Vector3Int.RoundToInt(raycastHit.normal);
-			_world.placeBlock(newPos, _blocks[_currentBlockIndex]);
+			Vector3Int blockPos = getBlockLookedAt(raycastHit) + Vector3Int.RoundToInt(raycastHit.normal);
+			if (!_controller.bounds.Intersects(new Bounds(blockPos + new Vector3(0.5f, 0.5f, 0.5f), Vector3.one)))
+				_world.placeBlock(blockPos, _blocks[_currentBlockIndex]);
 		}
 		
 		
@@ -127,7 +128,6 @@ public class Player : MonoBehaviour
 		else
 			rawPos = raycastHit.point - raycastHit.normal;
 		
-		return new Vector3Int(Convert.ToInt32(Math.Floor(Math.Round(rawPos.x, 5))), Convert.ToInt32(Math.Floor(Math.Round(rawPos.y, 5))), Convert.ToInt32(Math.Floor(Math.Round(rawPos.z, 5))));
-		
+		return new Vector3Int(Convert.ToInt32(Math.Floor(rawPos.x + 0.001f)), Convert.ToInt32(Math.Floor(rawPos.y + 0.001f)), Convert.ToInt32(Math.Floor(rawPos.z + 0.001f)));
 	}
 }
