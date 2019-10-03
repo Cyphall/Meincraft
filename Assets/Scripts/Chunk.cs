@@ -15,8 +15,6 @@ public class Chunk : MonoBehaviour
 
 	public void init()
 	{
-		gameObject.layer = 8;
-
 		_meshCollider = GetComponent<MeshCollider>();
 		_meshFilter = GetComponent<MeshFilter>();
 	}
