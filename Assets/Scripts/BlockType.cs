@@ -1,19 +1,19 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 public class BlockType
 {
-	public static readonly BlockType GRASS = new BlockType(new Vector2(0f, 0f), true);
-	public static readonly BlockType IRON = new BlockType(new Vector2(0.25f, 0f), true);
-	public static readonly BlockType WOOD = new BlockType(new Vector2(0.5f, 0f), true);
-	public static readonly BlockType TEST = new BlockType(new Vector2(0.75f, 0.75f), true);
 	public static readonly BlockType AIR = null;
+	public static readonly BlockType GRASS = new BlockType(new Vector2(0f, 0f));
+	public static readonly BlockType IRON = new BlockType(new Vector2(0.25f, 0f));
+	public static readonly BlockType WOOD = new BlockType(new Vector2(0.5f, 0f));
+	public static readonly BlockType STONE = new BlockType(new Vector2(0.75f, 0f));
+	public static readonly BlockType DIRT = new BlockType(new Vector2(0f, 0.25f));
 	
 	public Vector2 uvOffset;
-	public bool opaque { get; }
 
-	private BlockType(Vector2 uvOffset, bool opaque)
+	private BlockType(Vector2 uvOffset)
 	{
 		this.uvOffset = uvOffset;
-		this.opaque = opaque;
 	}
 }

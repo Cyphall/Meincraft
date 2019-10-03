@@ -5,7 +5,7 @@ using UnityEngine;
 public class Player : MonoBehaviour
 {
 	private Camera _camera;
-	private Main _mainScript;
+	private World _world;
 	private BlockType[] _blocks;
 	private CharacterController _controller;
 	private DynamicFOV _dynamicFOV;
@@ -21,9 +21,9 @@ public class Player : MonoBehaviour
 	private int _currentBlockIndex;
 	private Vector3 _moveDirection = Vector3.zero;
 
-	public void setMainScript(Main mainScript)
+	public void setWorld(World world)
 	{
-		_mainScript = mainScript;
+		_world = world;
 	}
 
 	private void Start()
@@ -63,12 +63,12 @@ public class Player : MonoBehaviour
 		bool lookingAtBlock = Physics.Raycast(ray, out RaycastHit raycastHit, 5, 256);
 		if (Input.GetMouseButtonDown(0) && lookingAtBlock)
 		{
-			_mainScript.world.placeBlock(getBlockLookedAt(raycastHit), BlockType.AIR);
+			_world.placeBlock(getBlockLookedAt(raycastHit), BlockType.AIR);
 		}
 		if (Input.GetMouseButtonDown(1) && lookingAtBlock)
 		{
 			Vector3Int newPos = getBlockLookedAt(raycastHit) + Vector3Int.RoundToInt(raycastHit.normal);
-			_mainScript.world.placeBlock(newPos, _blocks[_currentBlockIndex]);
+			_world.placeBlock(newPos, _blocks[_currentBlockIndex]);
 		}
 		
 		
