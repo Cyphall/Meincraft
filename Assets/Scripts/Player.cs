@@ -36,8 +36,8 @@ public class Player : MonoBehaviour
 		spawnPos = transform.position;
 		
 		_controller = GetComponent<CharacterController>();
-		
-		_blocks = new[]{BlockType.GRASS, BlockType.IRON, BlockType.WOOD};
+
+		_blocks = BlockType.ALL.ToArray();
 	}
 
 	private void Update()
@@ -121,8 +121,13 @@ public class Player : MonoBehaviour
 
 	private static Vector3Int getBlockLookedAt(RaycastHit raycastHit)
 	{
+		Vector3 rawPos;
 		if (raycastHit.normal.x + raycastHit.normal.y + raycastHit.normal.z < 0)
-			return new Vector3Int((int) Math.Floor(Math.Round(raycastHit.point.x, 5)), (int) Math.Floor(Math.Round(raycastHit.point.y, 5)), (int) Math.Floor(Math.Round(raycastHit.point.z, 5)));
-		return new Vector3Int((int) Math.Floor(Math.Round(raycastHit.point.x - raycastHit.normal.x, 5)), (int) Math.Floor(Math.Round(raycastHit.point.y - raycastHit.normal.y, 5)), (int) Math.Floor(Math.Round(raycastHit.point.z - raycastHit.normal.z, 5)));
+			rawPos = raycastHit.point;
+		else
+			rawPos = raycastHit.point - raycastHit.normal;
+		
+		return new Vector3Int(Convert.ToInt32(Math.Floor(Math.Round(rawPos.x, 5))), Convert.ToInt32(Math.Floor(Math.Round(rawPos.y, 5))), Convert.ToInt32(Math.Floor(Math.Round(rawPos.z, 5))));
+		
 	}
 }

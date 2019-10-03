@@ -11,7 +11,7 @@ public class Chunk : MonoBehaviour
 	private List<int> _triangles = new List<int>();
 	private List<Vector2> _uvs = new List<Vector2>();
 	
-	public BlockType[,,] blocks = new BlockType[16, 256, 16];
+	private BlockType[,,] _blocks;
 
 	public void init()
 	{
@@ -35,31 +35,9 @@ public class Chunk : MonoBehaviour
 		_triangles.Clear();
 	}
 
-	public void generate(float[,] noise)
+	public void setBlocks(BlockType[,,] blocks)
 	{
-		for (int x = 0; x < 16; x++)
-		{
-			for (int z = 0; z < 16; z++)
-			{
-				int maxY = 30 + (int) (noise[x, z] * 100);
-				
-				for (int y = 0; y <= maxY; y++)
-				{
-					if (y <= maxY - 4)
-					{
-						setBlock(new Vector3Int(x, y, z), BlockType.STONE);
-					}
-					else if (y <= maxY - 1)
-					{
-						setBlock(new Vector3Int(x, y, z), BlockType.DIRT);
-					}
-					else
-					{
-						setBlock(new Vector3Int(x, y, z), BlockType.GRASS);
-					}
-				}
-			}
-		}
+		_blocks = blocks;
 	}
 
 	public void rebuildMesh()
@@ -72,12 +50,12 @@ public class Chunk : MonoBehaviour
 			{
 				for (int x = 0; x < 16; x++)
 				{
-					if (blocks[x, y, z] == BlockType.AIR) continue;
+					if (_blocks[x, y, z] == BlockType.AIR) continue;
 
-					Vector2 uvOffset = blocks[x, y, z].uvOffset;
+					Vector2 uvOffset = _blocks[x, y, z].uvOffset;
 
 					// x + 1
-					if ((x + 1 < 16 && blocks[x + 1, y, z] == BlockType.AIR) || x + 1 == 16)
+					if ((x + 1 < 16 && _blocks[x + 1, y, z] == BlockType.AIR) || x + 1 == 16)
 					{
 						vCount += 4;
 						_vertices.Add(new Vector3(x+1, y, z));
@@ -91,7 +69,7 @@ public class Chunk : MonoBehaviour
 						_uvs.Add(uvOffset + new Vector2(0.25f, 0.125f - 0.0625f));
 					}
 					// x - 1
-					if ((x - 1 > -1 && blocks[x - 1, y, z] == BlockType.AIR) || x - 1 == -1)
+					if ((x - 1 > -1 && _blocks[x - 1, y, z] == BlockType.AIR) || x - 1 == -1)
 					{
 						vCount += 4;
 						_vertices.Add(new Vector3(x, y, z + 1));
@@ -105,7 +83,7 @@ public class Chunk : MonoBehaviour
 						_uvs.Add(uvOffset + new Vector2(0.125f, 0.125f - 0.0625f));
 					}
 					// y + 1
-					if ((y + 1 < 256 && blocks[x, y + 1, z] == BlockType.AIR) || y + 1 == 256)
+					if ((y + 1 < 256 && _blocks[x, y + 1, z] == BlockType.AIR) || y + 1 == 256)
 					{
 						vCount += 4;
 						_vertices.Add(new Vector3(x, y + 1, z + 1));
@@ -119,7 +97,7 @@ public class Chunk : MonoBehaviour
 						_uvs.Add(uvOffset + new Vector2(0.125f, 0.1875f - 0.0625f));
 					}
 					// y - 1
-					if ((y - 1 > -1 && blocks[x, y - 1, z] == BlockType.AIR) || y - 1 == -1)
+					if ((y - 1 > -1 && _blocks[x, y - 1, z] == BlockType.AIR) || y - 1 == -1)
 					{
 						vCount += 4;
 						_vertices.Add(new Vector3(x + 1, y, z + 1));
@@ -133,7 +111,7 @@ public class Chunk : MonoBehaviour
 						_uvs.Add(uvOffset + new Vector2(0.125f, 0.0625f - 0.0625f));
 					}
 					// z + 1
-					if ((z + 1 < 16 && blocks[x, y, z + 1] == BlockType.AIR) || z + 1 == 16)
+					if ((z + 1 < 16 && _blocks[x, y, z + 1] == BlockType.AIR) || z + 1 == 16)
 					{
 						vCount += 4;
 						_vertices.Add(new Vector3(x + 1, y, z + 1));
@@ -147,7 +125,7 @@ public class Chunk : MonoBehaviour
 						_uvs.Add(uvOffset + new Vector2(0.0625f, 0.125f - 0.0625f));
 					}
 					// z - 1
-					if ((z - 1 > -1 && blocks[x, y, z - 1] == BlockType.AIR) || z - 1 == -1)
+					if ((z - 1 > -1 && _blocks[x, y, z - 1] == BlockType.AIR) || z - 1 == -1)
 					{
 						vCount += 4;
 						_vertices.Add(new Vector3(x, y, z));
@@ -172,7 +150,7 @@ public class Chunk : MonoBehaviour
 
 	private void setBlock(Vector3Int pos, BlockType blockType)
 	{
-		blocks[pos.x, pos.y, pos.z] = blockType;
+		_blocks[pos.x, pos.y, pos.z] = blockType;
 	}
 	
 	public void placeBlock(Vector3Int pos, BlockType blockType)

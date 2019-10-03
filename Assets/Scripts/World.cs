@@ -1,6 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using UnityEngine;
 
@@ -9,17 +8,15 @@ public class World
 	private GameObject _chunkPrefab;
 	private Player _player;
 
-	private readonly Vector2 _seed = new Vector2(Random.Range(1f, 1000f), Random.Range(1f, 1000f));
-	private const float SCALE = 6;
-
 	private Dictionary<Vector2Int, Chunk> _chunks = new Dictionary<Vector2Int, Chunk>();
 	private ConcurrentQueue<Chunk> _applyQueue = new ConcurrentQueue<Chunk>();
 
 	public World(GameObject chunkPrefab, GameObject playerPrefab)
 	{
 		_chunkPrefab = chunkPrefab;
+		Biomes.initSeed();
 
-		const int renderDistance = 16;
+		const int renderDistance = 8;
 
 		for (int x = 0; x < renderDistance; x++)
 		{
@@ -40,39 +37,39 @@ public class World
 		_player.setWorld(this);
 	}
 
-	private void createChunk(Vector2Int pos)
+	private void createChunk(Vector2Int chunkPos)
 	{
-		if (_chunks.ContainsKey(pos))
+		if (_chunks.ContainsKey(chunkPos))
 		{
 			Debug.LogError("A chunk has been overriden without prior deletion");
-			destroyChunk(pos);
+			destroyChunk(chunkPos);
 		}
 		
-		Chunk chunk = Object.Instantiate(_chunkPrefab, new Vector3Int(pos.x, 0, pos.y) * 16, Quaternion.identity).GetComponent<Chunk>();
+		Chunk chunk = Object.Instantiate(_chunkPrefab, new Vector3Int(chunkPos.x, 0, chunkPos.y) * 16, Quaternion.identity).GetComponent<Chunk>();
 		
-		_chunks.Add(pos, chunk);
+		_chunks.Add(chunkPos, chunk);
 		
 		chunk.init();
 		
-		ThreadPool.QueueUserWorkItem(state => generateChunk(chunk, gen2(getNoise(pos, _seed, SCALE), getNoise(pos, _seed / 1.123f, SCALE / 1.456f)), _applyQueue));
+		ThreadPool.QueueUserWorkItem(state => generateChunk(chunk, Biomes.generateChunkBlocks(chunkPos, BiomeType.GREENHILLS2), _applyQueue));
 	}
 
-	private void destroyChunk(Vector2Int pos)
+	private void destroyChunk(Vector2Int chunkPos)
 	{
-		if (!_chunks.ContainsKey(pos))
+		if (!_chunks.ContainsKey(chunkPos))
 		{
 			Debug.LogError("Deletion of a non-existing chunk has been requested");
 			return;
 		}
 
-		Object.Destroy(_chunks[pos].gameObject);
+		Object.Destroy(_chunks[chunkPos].gameObject);
 		
-		_chunks.Remove(pos);
+		_chunks.Remove(chunkPos);
 	}
 
-	public void placeBlock(Vector3Int pos, BlockType blockType)
+	public void placeBlock(Vector3Int blockPos, BlockType blockType)
 	{
-		Vector2Int chunkPos = chunkPosFromBlockPos(pos);
+		Vector2Int chunkPos = chunkPosFromBlockPos(blockPos);
 
 		if (!_chunks.ContainsKey(chunkPos))
 		{
@@ -80,7 +77,7 @@ public class World
 			return;
 		}
 
-		_chunks[chunkPos].placeBlock(localBlockPosFromBlockPos(pos), blockType);
+		_chunks[chunkPos].placeBlock(localBlockPosFromBlockPos(blockPos), blockType);
 	}
 
 	private static Vector2Int chunkPosFromBlockPos(Vector3Int blockPos)
@@ -104,58 +101,6 @@ public class World
 		return localBlockPos;
 	}
 
-	private static float[,] getNoise(Vector2Int chunkPos, Vector2 seed, float scale)
-	{
-		float[,] noise = new float[16, 16];
-
-		for (int x = 0; x < 16; x++)
-		{
-			for (int y = 0; y < 16; y++)
-			{
-				noise[x, y] = Mathf.PerlinNoise((seed.x + chunkPos.x + x / 16f) / scale, (seed.y + chunkPos.y + y / 16f) / scale);
-			}
-		}
-
-		return noise;
-	}
-
-	private static float[,] gen1(float[,] a, float[,] b)
-	{
-		float[,] res = new float[16,16];
-		for (int x = 0; x<16; x++)
-		{
-			for (int y = 0; y<16; y++)
-			{
-				res[x, y] = (a[x, y] + b[x, y]) / 2;
-			}
-		}
-		return res;
-	}
-	
-	private static float[,] gen2(float[,] a, float[,] b)
-	{
-		float[,] res = new float[16,16];
-		for (int x = 0; x<16; x++)
-		{
-			for (int y = 0; y<16; y++)
-			{
-				float temp = a[x, y] + b[x, y];
-
-				if (temp > 1)
-				{
-					temp = (temp % 1) / 5;
-				}
-				else
-				{
-					temp = 1 - (1 - temp) / 3;
-				}
-
-				res[x, y] = temp;
-			}
-		}
-		return res;
-	}
-
 	public void fixedUpdate()
 	{
 		if (_player.transform.position.y < -10)
@@ -169,9 +114,9 @@ public class World
 		}
 	}
 
-	public static void generateChunk(Chunk chunk, float[,] noise, ConcurrentQueue<Chunk> applyQueue)
+	public static void generateChunk(Chunk chunk, BlockType[,,] blocks, ConcurrentQueue<Chunk> applyQueue)
 	{
-		chunk.generate(noise);
+		chunk.setBlocks(blocks);
 		chunk.rebuildMesh();
 		
 		applyQueue.Enqueue(chunk);
