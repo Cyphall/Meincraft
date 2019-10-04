@@ -34,7 +34,7 @@ public static class Biomes
 				
 				for (int y = 0; y < targetY; y++)
 				{
-					if (targetY > biomeParams.rockMin + (biomeParams.rockMax - biomeParams.rockMin) * getNoise(chunkPos, new Vector2Int(x, z), 1, 1, 4))
+					if (targetY > biomeParams.rockMin + (biomeParams.rockMax - biomeParams.rockMin) * getRawNoise(chunkPos, new Vector2Int(x, z), 4) + 0.5f)
 					{
 						blocks[x, y, z] = BlockType.STONE;
 					}
@@ -72,37 +72,48 @@ public static class Biomes
 			rockMin = 120,
 			rockMax = 140
 		};
-
-		int octaves = 5;
-
-		float lacunarity = 2f;
-		float persistance = 0.5f;
 		
 		for (int x = 0; x<16; x++)
 		{
 			for (int y = 0; y<16; y++)
 			{
-				float divider = 0;
-				
-				for (int i = 0; i < octaves; i++)
-				{
-					float frequency = Mathf.Pow(lacunarity, i);
-					float amplitude = Mathf.Pow(persistance, i);
-					biomeParams.heightMap[x, y] += getNoise(chunkPos, new Vector2Int(x, y), frequency, amplitude, 8);
-					divider += amplitude;
-				}
-
-				biomeParams.heightMap[x, y] /= divider;
-				biomeParams.heightMap[x, y] += 0.5f;
+				biomeParams.heightMap[x, y] = getNoise(chunkPos, new Vector2Int(x, y), 5, 8);
 			}
 		}
 
 		return biomeParams;
 	}
-	
-	private static float getNoise(Vector2Int chunkPos, Vector2Int blockPos, float frequency, float amplitude, float scale)
+
+	private static float getNoise(Vector2Int chunkPos, Vector2Int blockPos, int octaves, float scale, float lacunarity = 2f, float persistance = 0.5f)
 	{
-		return (Math.Min(Mathf.PerlinNoise((_seed.x + chunkPos.x + blockPos.x / 16f) * frequency / scale, (_seed.y + chunkPos.y + blockPos.y / 16f) * frequency / scale), 1) - 0.5f) * amplitude;
+		float result = 0;
+		
+		float divider = 0;
+
+		float frequency = 1;
+		float amplitude = 1;
+				
+		for (int i = 0; i < octaves; i++)
+		{
+			result += getRawNoise(chunkPos, blockPos, scale, frequency, amplitude);
+			
+			divider += amplitude;
+			
+			frequency *= lacunarity;
+			amplitude *= persistance;
+		}
+
+		result /= divider;
+
+		return result + 0.5f;
+	}
+	
+	private static float getRawNoise(Vector2Int chunkPos, Vector2Int blockPos, float scale, float frequency = 1f, float amplitude = 1f)
+	{
+		float x = (_seed.x + chunkPos.x + blockPos.x / 16f) * frequency / scale;
+		float y = (_seed.y + chunkPos.y + blockPos.y / 16f) * frequency / scale;
+		
+		return (Mathf.InverseLerp(0, 1, Mathf.PerlinNoise(x, y)) - 0.5f) * amplitude;
 	}
 }
 

@@ -16,6 +16,7 @@ public class Player : MonoBehaviour
 	public float rotationSpeed = 1.5f;
 	public float gravity = 28f;
 
+	[NonSerialized]
 	public Vector3 spawnPos;
 	
 	private int _currentBlockIndex;
