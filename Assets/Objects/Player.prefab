@@ -68,7 +68,6 @@ MonoBehaviour:
   jumpSpeed: 8.5
   rotationSpeed: 1.5
   gravity: 28
-  spawnPos: {x: 0, y: 0, z: 0}
 --- !u!1 &8414136908355685857
 GameObject:
   m_ObjectHideFlags: 0
@@ -135,7 +134,7 @@ Camera:
   m_CullingMask:
     serializedVersion: 2
     m_Bits: 4294967295
-  m_RenderingPath: -1
+  m_RenderingPath: 3
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
   m_TargetEye: 3
