@@ -13,7 +13,7 @@ public class World
 
 	private List<Vector2Int> _chunkRemoveQueue = new List<Vector2Int>();
 	
-	private const float RENDER_DISTANCE = 8 - 0.1f;
+	private const float RENDER_DISTANCE = 12 - 0.1f;
 
 	public World(GameObject chunkPrefab, GameObject playerPrefab)
 	{
@@ -163,7 +163,7 @@ public class World
 		}
 	}
 
-	public static void generateChunk(Chunk chunk, BlockType[,,] blocks, ConcurrentQueue<Chunk> applyQueue)
+	private static void generateChunk(Chunk chunk, BlockType[,,] blocks, ConcurrentQueue<Chunk> applyQueue)
 	{
 		chunk.setBlocks(blocks);
 		chunk.rebuildMesh();
