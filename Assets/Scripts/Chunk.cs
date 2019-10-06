@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshCollider))]
@@ -155,7 +154,7 @@ public class Chunk : MonoBehaviour
 		_triangles = triangles.ToArray();
 	}
 
-	public static List<T> triFromQuad<T>(T v1, T v2, T v3, T v4)
+	private static List<T> triFromQuad<T>(T v1, T v2, T v3, T v4)
 	{
 		return new List<T> {v1, v2, v4, v4, v2, v3};
 	}

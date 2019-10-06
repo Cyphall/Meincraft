@@ -3,25 +3,28 @@ using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 
-public class World
+public class World : MonoBehaviour
 {
-	private GameObject _chunkPrefab;
-	private Player _player;
+	public GameObject chunkPrefab;
+	public GameObject playerPrefab;
+	
+	public Player player { get; private set; }
 
 	private Dictionary<Vector2Int, Chunk> _chunks = new Dictionary<Vector2Int, Chunk>();
 	private ConcurrentQueue<Chunk> _applyQueue = new ConcurrentQueue<Chunk>();
 
 	private List<Vector2Int> _chunkRemoveQueue = new List<Vector2Int>();
 	
-	private const float RENDER_DISTANCE = 12 - 0.1f;
+	private const float RENDER_DISTANCE = 32 - 0.1f;
 
-	public World(GameObject chunkPrefab, GameObject playerPrefab)
+	private void Start()
 	{
-		_chunkPrefab = chunkPrefab;
+		Toolbox.world = this;
+		
 		Biomes.initSeed();
 		
-		_player = Object.Instantiate(playerPrefab, new Vector3(8, 256, 8), Quaternion.identity).GetComponent<Player>();
-		_player.setWorld(this);
+		player = Instantiate(playerPrefab, new Vector3(8, 256, 8), Quaternion.identity).GetComponent<Player>();
+		player.setWorld(this);
 	}
 
 	private void createChunk(Vector2Int chunkPos)
@@ -32,13 +35,13 @@ public class World
 			destroyChunk(chunkPos);
 		}
 		
-		Chunk chunk = Object.Instantiate(_chunkPrefab, new Vector3Int(chunkPos.x, 0, chunkPos.y) * 16, Quaternion.identity).GetComponent<Chunk>();
+		Chunk chunk = Instantiate(chunkPrefab, new Vector3Int(chunkPos.x, 0, chunkPos.y) * 16, Quaternion.identity).GetComponent<Chunk>();
 		
 		_chunks.Add(chunkPos, chunk);
 		
 		chunk.init();
 		
-		ThreadPool.QueueUserWorkItem(state => generateChunk(chunk, Biomes.generateChunkBlocks(chunkPos, BiomeType.MOUNTAINS), _applyQueue));
+		ThreadPool.QueueUserWorkItem(state => generateChunk(chunk, Biomes.generateChunkBlocks(chunkPos, Biomes.mountains2), _applyQueue));
 	}
 
 	private void destroyChunk(Vector2Int chunkPos)
@@ -49,7 +52,7 @@ public class World
 			return;
 		}
 
-		Object.Destroy(_chunks[chunkPos].gameObject);
+		Destroy(_chunks[chunkPos].gameObject);
 		
 		_chunkRemoveQueue.Add(chunkPos);
 	}
@@ -98,9 +101,9 @@ public class World
 		return chunkPos;
 	}
 
-	public void fixedUpdate()
+	private void FixedUpdate()
 	{
-		Vector2Int chunkWithPlayer = chunkPosFromPlayerPos(_player.transform.position);
+		Vector2Int chunkWithPlayer = chunkPosFromPlayerPos(player.transform.position);
 
 		foreach (KeyValuePair<Vector2Int, Chunk> pair in _chunks)
 		{
@@ -149,11 +152,11 @@ public class World
 			}
 		}
 		
-		if (_player.transform.position.y < -10)
+		if (player.transform.position.y < -10)
 		{
-			Transform transform = _player.transform;
-			Vector3 position = transform.position;
-			transform.position = new Vector3(position.x, _player.spawnPos.y, position.z);
+			Transform pTransform = player.transform;
+			Vector3 position = pTransform.position;
+			pTransform.position = new Vector3(position.x, player.spawnPos.y, position.z);
 		}
 		
 		if (_applyQueue.TryDequeue(out Chunk chunk))

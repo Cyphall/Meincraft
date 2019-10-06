@@ -4,24 +4,17 @@ using Random = UnityEngine.Random;
 
 public static class Biomes
 {
-	private static Vector2 _seed;
+	public static Vector2 seed { get; private set; }
 
 	public static void initSeed()
 	{
-		_seed = new Vector2(Random.Range(1f, 1000f), Random.Range(1f, 1000f));
+		seed = new Vector2(Random.Range(1f, 10000f), Random.Range(1f, 10000f));
+//		seed = new Vector2(4525.1f, 2560.6f);
 	}
 
-	public static BlockType[,,] generateChunkBlocks(Vector2Int chunkPos, BiomeType biomeType)
+	public static BlockType[,,] generateChunkBlocks(Vector2Int chunkPos, Func<Vector2Int, BiomeParams> biome)
 	{
-		BiomeParams biomeParams;
-		switch (biomeType)
-		{
-			case BiomeType.MOUNTAINS:
-				biomeParams = mountains(chunkPos);
-				break;
-			default:
-				throw new ArgumentOutOfRangeException(nameof(biomeType), biomeType, null);
-		}
+		BiomeParams biomeParams = biome(chunkPos);
 		
 		BlockType[,,] blocks = new BlockType[16, 256, 16];
 		
@@ -60,7 +53,7 @@ public static class Biomes
 		return blocks;
 	}
 	
-	private static BiomeParams mountains(Vector2Int chunkPos)
+	public static BiomeParams mountains(Vector2Int chunkPos)
 	{
 		BiomeParams biomeParams = new BiomeParams
 		{
@@ -78,6 +71,32 @@ public static class Biomes
 			for (int y = 0; y<16; y++)
 			{
 				biomeParams.heightMap[x, y] = getNoise(chunkPos, new Vector2Int(x, y), 5, 8);
+			}
+		}
+
+		return biomeParams;
+	}
+	
+	public static BiomeParams mountains2(Vector2Int chunkPos)
+	{
+		BiomeParams biomeParams = new BiomeParams
+		{
+			heightMap = new float[16, 16],
+			
+			minY = 10,
+			maxY = 256,
+			
+			rockMin = 70,
+			rockMax = 85
+		};
+		
+		AnimationCurve curve = new AnimationCurve(new Keyframe(0, 0), new Keyframe(0.5f, 0.1f), new Keyframe(1, 1));
+
+		for (int x = 0; x<16; x++)
+		{
+			for (int y = 0; y<16; y++)
+			{
+				biomeParams.heightMap[x, y] = curve.Evaluate(getNoise(chunkPos, new Vector2Int(x, y), 8, 12));
 			}
 		}
 
@@ -110,19 +129,14 @@ public static class Biomes
 	
 	private static float getRawNoise(Vector2Int chunkPos, Vector2Int blockPos, float scale, float frequency = 1f, float amplitude = 1f)
 	{
-		float x = (_seed.x + chunkPos.x + blockPos.x / 16f) * frequency / scale;
-		float y = (_seed.y + chunkPos.y + blockPos.y / 16f) * frequency / scale;
+		float x = (seed.x + chunkPos.x + blockPos.x / 16f) * frequency / scale;
+		float y = (seed.y + chunkPos.y + blockPos.y / 16f) * frequency / scale;
 		
 		return (Mathf.InverseLerp(0, 1, Mathf.PerlinNoise(x, y)) - 0.5f) * amplitude;
 	}
 }
 
-public enum BiomeType
-{
-	MOUNTAINS
-}
-
-internal struct BiomeParams
+public struct BiomeParams
 {
 	public float[,] heightMap;
 	public int minY;
