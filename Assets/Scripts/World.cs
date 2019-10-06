@@ -11,11 +11,11 @@ public class World : MonoBehaviour
 	public Player player { get; private set; }
 
 	private Dictionary<Vector2Int, Chunk> _chunks = new Dictionary<Vector2Int, Chunk>();
-	private ConcurrentQueue<Chunk> _applyQueue = new ConcurrentQueue<Chunk>();
+	private GenerationQueue _queue = new GenerationQueue();
 
-	private List<Vector2Int> _chunkRemoveQueue = new List<Vector2Int>();
+	private List<Vector2Int> _chunkRemoveList = new List<Vector2Int>();
 	
-	private const float RENDER_DISTANCE = 32 - 0.1f;
+	private const float RENDER_DISTANCE = 8 - 0.1f;
 
 	private void Start()
 	{
@@ -39,9 +39,9 @@ public class World : MonoBehaviour
 		
 		_chunks.Add(chunkPos, chunk);
 		
-		chunk.init();
+		chunk.init(chunkPos);
 		
-		ThreadPool.QueueUserWorkItem(state => generateChunk(chunk, Biomes.generateChunkBlocks(chunkPos, Biomes.mountains2), _applyQueue));
+		_queue.enqueue(chunk);
 	}
 
 	private void destroyChunk(Vector2Int chunkPos)
@@ -54,7 +54,7 @@ public class World : MonoBehaviour
 
 		Destroy(_chunks[chunkPos].gameObject);
 		
-		_chunkRemoveQueue.Add(chunkPos);
+		_chunkRemoveList.Add(chunkPos);
 	}
 
 	public void placeBlock(Vector3Int blockPos, BlockType blockType)
@@ -113,11 +113,11 @@ public class World : MonoBehaviour
 			}
 		}
 
-		foreach (Vector2Int chunkPos in _chunkRemoveQueue)
+		foreach (Vector2Int chunkPos in _chunkRemoveList)
 		{
 			_chunks.Remove(chunkPos);
 		}
-		_chunkRemoveQueue.Clear();
+		_chunkRemoveList.Clear();
 
 		for (int x = chunkWithPlayer.x ; x <= chunkWithPlayer.x + RENDER_DISTANCE; x++)
 		{
@@ -159,18 +159,10 @@ public class World : MonoBehaviour
 			pTransform.position = new Vector3(position.x, player.spawnPos.y, position.z);
 		}
 		
-		if (_applyQueue.TryDequeue(out Chunk chunk))
+		if (_queue.tryDequeue(out Chunk chunk))
 		{
 			if (chunk)
 				chunk.applyMesh();
 		}
-	}
-
-	private static void generateChunk(Chunk chunk, BlockType[,,] blocks, ConcurrentQueue<Chunk> applyQueue)
-	{
-		chunk.setBlocks(blocks);
-		chunk.rebuildMesh();
-		
-		applyQueue.Enqueue(chunk);
 	}
 }

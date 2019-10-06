@@ -10,17 +10,23 @@ public class Chunk : MonoBehaviour
 	private Vector3[] _vertices;
 	private Vector2[] _uvs;
 	private int[] _triangles;
+
+	public Vector2Int chunkPos { get; private set; }
 	
 	private BlockType[,,] _blocks;
 
-	public void init()
+	public void init(Vector2Int pos)
 	{
+		chunkPos = pos;
+		
 		_meshCollider = GetComponent<MeshCollider>();
 		_meshFilter = GetComponent<MeshFilter>();
 	}
 
 	public void applyMesh()
 	{
+		Destroy(_meshFilter.sharedMesh);
+		
 		Mesh mesh = new Mesh {vertices = _vertices, uv = _uvs, triangles = _triangles};
 		
 		// à activer quand on aura plus de lag avec le multithreading
