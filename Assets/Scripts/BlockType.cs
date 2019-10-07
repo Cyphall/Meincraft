@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using Unity.Mathematics;
-using UnityEngine;
 
 public class BlockType
 {
@@ -20,11 +19,11 @@ public class BlockType
 		types = new Dictionary<byte, BlockType>
 		{
 			{AIR, null},
-			{STONE, new BlockType(new Vector2(0.75f, 0f))},
-			{GRASS, new BlockType(new Vector2(0f, 0f))},
-			{DIRT, new BlockType(new Vector2(0f, 0.25f))},
-			{WOOD, new BlockType(new Vector2(0.5f, 0f))},
-			{IRON, new BlockType(new Vector2(0.25f, 0f))}
+			{STONE, new BlockType(new float2(0.75f, 0f))},
+			{GRASS, new BlockType(new float2(0f, 0f))},
+			{DIRT, new BlockType(new float2(0f, 0.25f))},
+			{WOOD, new BlockType(new float2(0.5f, 0f))},
+			{IRON, new BlockType(new float2(0.25f, 0f))}
 		};
 	}
 

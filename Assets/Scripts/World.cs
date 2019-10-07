@@ -34,7 +34,7 @@ public class World : MonoBehaviour
 			destroyChunk(chunkPos);
 		}
 		
-		Chunk chunk = Instantiate(chunkPrefab, new Vector3Int(chunkPos.x, 0, chunkPos.y) * 16, Quaternion.identity).GetComponent<Chunk>();
+		Chunk chunk = Instantiate(chunkPrefab, new float3(chunkPos.x, 0, chunkPos.y) * 16, Quaternion.identity).GetComponent<Chunk>();
 		
 		_chunks.Add(chunkPos, chunk);
 		

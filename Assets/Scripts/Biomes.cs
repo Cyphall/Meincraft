@@ -6,12 +6,11 @@ using Random = UnityEngine.Random;
 
 public static class Biomes
 {
-	public static Vector2 seed { get; private set; }
+	public static float2 seed { get; private set; }
 
 	public static void initSeed()
 	{
-		seed = new Vector2(Random.Range(1f, 10000f), Random.Range(1f, 10000f));
-//		seed = new Vector2(4525.1f, 2560.6f);
+		seed = new float2(Random.Range(1f, 10000f), Random.Range(1f, 10000f));
 	}
 
 	public static void generateChunkBlocks(NativeArray<byte> blocks, int2 chunkPos, Func<int2, BiomeParams> biome)
