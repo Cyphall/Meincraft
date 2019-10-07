@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshCollider))]
@@ -7,15 +8,15 @@ public class Chunk : MonoBehaviour
 	private MeshCollider _meshCollider;
 	private MeshFilter _meshFilter;
 	
-	private Vector3[] _vertices;
-	private Vector2[] _uvs;
-	private int[] _triangles;
+	private NativeList<float3> _vertices;
+	private NativeList<float2> _uvs;
+	private NativeList<int> _triangles;
 
-	public Vector2Int chunkPos { get; private set; }
+	public int2 chunkPos { get; private set; }
 	
-	private BlockType[,,] _blocks;
+	private byte[] _blocks;
 
-	public void init(Vector2Int pos)
+	public void init(int2 pos)
 	{
 		chunkPos = pos;
 		
@@ -27,33 +28,42 @@ public class Chunk : MonoBehaviour
 	{
 		Destroy(_meshFilter.sharedMesh);
 		
-		Mesh mesh = new Mesh {vertices = _vertices, uv = _uvs, triangles = _triangles};
+		Mesh mesh = new Mesh();
+
+		mesh.SetVertices<float3>(_vertices);
+		mesh.SetUVs<float2>(0, _uvs);
+		mesh.triangles = _triangles.ToArray();
 		
-		// à activer quand on aura plus de lag avec le multithreading
-		// mesh.Optimize();
+		mesh.Optimize();
 
 		mesh.RecalculateNormals();
+		mesh.RecalculateTangents();
 		
 		_meshFilter.sharedMesh = mesh;
 		_meshCollider.sharedMesh = mesh;
 		
 		mesh.UploadMeshData(true);
 
-		_vertices = null;
-		_uvs = null;
-		_triangles = null;
+		_vertices.Dispose();
+		_uvs.Dispose();
+		_triangles.Dispose();
 	}
 
-	public void setBlocks(BlockType[,,] blocks)
+	public void setData(NativeArray<byte> blocks, NativeList<float3> vertices, NativeList<float2> uvs, NativeList<int> triangles)
 	{
-		_blocks = blocks;
+		_blocks = blocks.ToArray();
+		blocks.Dispose();
+		
+		_vertices = vertices;
+		_uvs = uvs;
+		_triangles = triangles;
 	}
 
-	public void rebuildMesh()
+	private void rebuildMesh()
 	{
-		List<Vector3> vertices = new List<Vector3>();
-		List<Vector2> uvs = new List<Vector2>();
-		List<int> triangles = new List<int>();
+		_vertices = new NativeList<float3>(Allocator.Persistent);
+		_uvs = new NativeList<float2>(Allocator.Persistent);
+		_triangles = new NativeList<int>(Allocator.Persistent);
 		
 		int vCount = 0;
         
@@ -63,114 +73,149 @@ public class Chunk : MonoBehaviour
 			{
 				for (int x = 0; x < 16; x++)
 				{
-					if (_blocks[x, y, z] == BlockType.AIR) continue;
+					if (_blocks[y + z * 256 + x * 4096] == BlockType.AIR) continue;
 
-					Vector2 uvOffset = _blocks[x, y, z].uvOffset;
+					float2 uvOffset = BlockType.types[_blocks[y + z * 256 + x * 4096]].uvOffset;
 
 					// x + 1
-					if ((x + 1 < 16 && _blocks[x + 1, y, z] == BlockType.AIR) || x + 1 == 16)
+					if ((x + 1 < 16 && _blocks[y + z * 256 + (x+1) * 4096] == BlockType.AIR) || x + 1 == 16)
 					{
 						vCount += 4;
-						vertices.Add(new Vector3(x+1, y, z));
-						vertices.Add(new Vector3(x+1, y+1, z));
-						vertices.Add(new Vector3(x+1, y+1, z+1));
-						vertices.Add(new Vector3(x+1, y, z+1));
-						triangles.AddRange(triFromQuad(vCount-4, vCount-3, vCount-2, vCount-1));
-						uvs.Add(uvOffset + new Vector2(0.1875f, 0.125f - 0.0625f));
-						uvs.Add(uvOffset + new Vector2(0.1875f, 0.1875f - 0.0625f));
-						uvs.Add(uvOffset + new Vector2(0.25f, 0.1875f - 0.0625f));
-						uvs.Add(uvOffset + new Vector2(0.25f, 0.125f - 0.0625f));
+						_vertices.Add(new float3(x+1, y, z));
+						_vertices.Add(new float3(x+1, y+1, z));
+						_vertices.Add(new float3(x+1, y+1, z+1));
+						_vertices.Add(new float3(x+1, y, z+1));
+						
+						_triangles.Add(vCount-4);
+						_triangles.Add(vCount-3);
+						_triangles.Add(vCount-1);
+						_triangles.Add(vCount-1);
+						_triangles.Add(vCount-3);
+						_triangles.Add(vCount-2);
+						
+						_uvs.Add(uvOffset + new float2(0.1875f, 0.125f - 0.0625f));
+						_uvs.Add(uvOffset + new float2(0.1875f, 0.1875f - 0.0625f));
+						_uvs.Add(uvOffset + new float2(0.25f, 0.1875f - 0.0625f));
+						_uvs.Add(uvOffset + new float2(0.25f, 0.125f - 0.0625f));
 					}
 					// x - 1
-					if ((x - 1 > -1 && _blocks[x - 1, y, z] == BlockType.AIR) || x - 1 == -1)
+					if ((x - 1 > -1 && _blocks[y + z * 256 + (x-1) * 4096] == BlockType.AIR) || x - 1 == -1)
 					{
 						vCount += 4;
-						vertices.Add(new Vector3(x, y, z + 1));
-						vertices.Add(new Vector3(x, y + 1, z + 1));
-						vertices.Add(new Vector3(x, y + 1, z));
-						vertices.Add(new Vector3(x, y, z));
-						triangles.AddRange(triFromQuad(vCount-4, vCount-3, vCount-2, vCount-1));
-						uvs.Add(uvOffset + new Vector2(0.0625f, 0.125f - 0.0625f));
-						uvs.Add(uvOffset + new Vector2(0.0625f, 0.1875f - 0.0625f));
-						uvs.Add(uvOffset + new Vector2(0.125f, 0.1875f - 0.0625f));
-						uvs.Add(uvOffset + new Vector2(0.125f, 0.125f - 0.0625f));
+						_vertices.Add(new float3(x, y, z + 1));
+						_vertices.Add(new float3(x, y + 1, z + 1));
+						_vertices.Add(new float3(x, y + 1, z));
+						_vertices.Add(new float3(x, y, z));
+						
+						_triangles.Add(vCount-4);
+						_triangles.Add(vCount-3);
+						_triangles.Add(vCount-1);
+						_triangles.Add(vCount-1);
+						_triangles.Add(vCount-3);
+						_triangles.Add(vCount-2);
+
+						_uvs.Add(uvOffset + new float2(0.0625f, 0.125f - 0.0625f));
+						_uvs.Add(uvOffset + new float2(0.0625f, 0.1875f - 0.0625f));
+						_uvs.Add(uvOffset + new float2(0.125f, 0.1875f - 0.0625f));
+						_uvs.Add(uvOffset + new float2(0.125f, 0.125f - 0.0625f));
 					}
 					// y + 1
-					if ((y + 1 < 256 && _blocks[x, y + 1, z] == BlockType.AIR) || y + 1 == 256)
+					if ((y + 1 < 256 && _blocks[(y+1) + z * 256 + x * 4096] == BlockType.AIR) || y + 1 == 256)
 					{
 						vCount += 4;
-						vertices.Add(new Vector3(x, y + 1, z + 1));
-						vertices.Add(new Vector3(x + 1, y + 1, z + 1));
-						vertices.Add(new Vector3(x + 1, y + 1, z));
-						vertices.Add(new Vector3(x, y + 1, z));
-						triangles.AddRange(triFromQuad(vCount-4, vCount-3, vCount-2, vCount-1));
-						uvs.Add(uvOffset + new Vector2(0.0625f, 0.1875f - 0.0625f));
-						uvs.Add(uvOffset + new Vector2(0.0625f, 0.25f - 0.0625f));
-						uvs.Add(uvOffset + new Vector2(0.125f, 0.25f - 0.0625f));
-						uvs.Add(uvOffset + new Vector2(0.125f, 0.1875f - 0.0625f));
+						_vertices.Add(new float3(x, y + 1, z + 1));
+						_vertices.Add(new float3(x + 1, y + 1, z + 1));
+						_vertices.Add(new float3(x + 1, y + 1, z));
+						_vertices.Add(new float3(x, y + 1, z));
+						
+						_triangles.Add(vCount-4);
+						_triangles.Add(vCount-3);
+						_triangles.Add(vCount-1);
+						_triangles.Add(vCount-1);
+						_triangles.Add(vCount-3);
+						_triangles.Add(vCount-2);
+
+						_uvs.Add(uvOffset + new float2(0.0625f, 0.1875f - 0.0625f));
+						_uvs.Add(uvOffset + new float2(0.0625f, 0.25f - 0.0625f));
+						_uvs.Add(uvOffset + new float2(0.125f, 0.25f - 0.0625f));
+						_uvs.Add(uvOffset + new float2(0.125f, 0.1875f - 0.0625f));
 					}
 					// y - 1
-					if ((y - 1 > -1 && _blocks[x, y - 1, z] == BlockType.AIR) || y - 1 == -1)
+					if ((y - 1 > -1 && _blocks[(y-1) + z * 256 + x * 4096] == BlockType.AIR) || y - 1 == -1)
 					{
 						vCount += 4;
-						vertices.Add(new Vector3(x + 1, y, z + 1));
-						vertices.Add(new Vector3(x, y, z + 1));
-						vertices.Add(new Vector3(x, y, z));
-						vertices.Add(new Vector3(x + 1, y, z));
-						triangles.AddRange(triFromQuad(vCount-4, vCount-3, vCount-2, vCount-1));
-						uvs.Add(uvOffset + new Vector2(0.0625f, 0.0625f - 0.0625f));
-						uvs.Add(uvOffset + new Vector2(0.0625f, 0.125f - 0.0625f));
-						uvs.Add(uvOffset + new Vector2(0.125f, 0.125f - 0.0625f));
-						uvs.Add(uvOffset + new Vector2(0.125f, 0.0625f - 0.0625f));
+						_vertices.Add(new float3(x + 1, y, z + 1));
+						_vertices.Add(new float3(x, y, z + 1));
+						_vertices.Add(new float3(x, y, z));
+						_vertices.Add(new float3(x + 1, y, z));
+						
+						_triangles.Add(vCount-4);
+						_triangles.Add(vCount-3);
+						_triangles.Add(vCount-1);
+						_triangles.Add(vCount-1);
+						_triangles.Add(vCount-3);
+						_triangles.Add(vCount-2);
+
+						_uvs.Add(uvOffset + new float2(0.0625f, 0.0625f - 0.0625f));
+						_uvs.Add(uvOffset + new float2(0.0625f, 0.125f - 0.0625f));
+						_uvs.Add(uvOffset + new float2(0.125f, 0.125f - 0.0625f));
+						_uvs.Add(uvOffset + new float2(0.125f, 0.0625f - 0.0625f));
 					}
 					// z + 1
-					if ((z + 1 < 16 && _blocks[x, y, z + 1] == BlockType.AIR) || z + 1 == 16)
+					if ((z + 1 < 16 && _blocks[y + (z+1) * 256 + x * 4096] == BlockType.AIR) || z + 1 == 16)
 					{
 						vCount += 4;
-						vertices.Add(new Vector3(x + 1, y, z + 1));
-						vertices.Add(new Vector3(x + 1, y + 1, z + 1));
-						vertices.Add(new Vector3(x, y + 1, z + 1));
-						vertices.Add(new Vector3(x, y, z + 1));
-						triangles.AddRange(triFromQuad(vCount-4, vCount-3, vCount-2, vCount-1));
-						uvs.Add(uvOffset + new Vector2(0f, 0.125f - 0.0625f));
-						uvs.Add(uvOffset + new Vector2(0f, 0.1875f - 0.0625f));
-						uvs.Add(uvOffset + new Vector2(0.0625f, 0.1875f - 0.0625f));
-						uvs.Add(uvOffset + new Vector2(0.0625f, 0.125f - 0.0625f));
+						_vertices.Add(new float3(x + 1, y, z + 1));
+						_vertices.Add(new float3(x + 1, y + 1, z + 1));
+						_vertices.Add(new float3(x, y + 1, z + 1));
+						_vertices.Add(new float3(x, y, z + 1));
+						
+						_triangles.Add(vCount-4);
+						_triangles.Add(vCount-3);
+						_triangles.Add(vCount-1);
+						_triangles.Add(vCount-1);
+						_triangles.Add(vCount-3);
+						_triangles.Add(vCount-2);
+
+						_uvs.Add(uvOffset + new float2(0f, 0.125f - 0.0625f));
+						_uvs.Add(uvOffset + new float2(0f, 0.1875f - 0.0625f));
+						_uvs.Add(uvOffset + new float2(0.0625f, 0.1875f - 0.0625f));
+						_uvs.Add(uvOffset + new float2(0.0625f, 0.125f - 0.0625f));
 					}
 					// z - 1
-					if ((z - 1 > -1 && _blocks[x, y, z - 1] == BlockType.AIR) || z - 1 == -1)
+					if ((z - 1 > -1 && _blocks[y + (z-1) * 256 + x * 4096] == BlockType.AIR) || z - 1 == -1)
 					{
 						vCount += 4;
-						vertices.Add(new Vector3(x, y, z));
-						vertices.Add(new Vector3(x, y + 1, z));
-						vertices.Add(new Vector3(x + 1, y + 1, z));
-						vertices.Add(new Vector3(x + 1, y, z));
-						triangles.AddRange(triFromQuad(vCount-4, vCount-3, vCount-2, vCount-1));
-						uvs.Add(uvOffset + new Vector2(0.125f, 0.125f - 0.0625f));
-						uvs.Add(uvOffset + new Vector2(0.125f, 0.1875f - 0.0625f));
-						uvs.Add(uvOffset + new Vector2(0.1875f, 0.1875f - 0.0625f));
-						uvs.Add(uvOffset + new Vector2(0.1875f, 0.125f - 0.0625f));
+						_vertices.Add(new float3(x, y, z));
+						_vertices.Add(new float3(x, y + 1, z));
+						_vertices.Add(new float3(x + 1, y + 1, z));
+						_vertices.Add(new float3(x + 1, y, z));
+						
+						_triangles.Add(vCount-4);
+						_triangles.Add(vCount-3);
+						_triangles.Add(vCount-1);
+						_triangles.Add(vCount-1);
+						_triangles.Add(vCount-3);
+						_triangles.Add(vCount-2);
+
+						_uvs.Add(uvOffset + new float2(0.125f, 0.125f - 0.0625f));
+						_uvs.Add(uvOffset + new float2(0.125f, 0.1875f - 0.0625f));
+						_uvs.Add(uvOffset + new float2(0.1875f, 0.1875f - 0.0625f));
+						_uvs.Add(uvOffset + new float2(0.1875f, 0.125f - 0.0625f));
 					}
 				}
 			}
 		}
 
-		_vertices = vertices.ToArray();
-		_uvs = uvs.ToArray();
-		_triangles = triangles.ToArray();
+		applyMesh();
 	}
 
-	private static List<T> triFromQuad<T>(T v1, T v2, T v3, T v4)
+	private void setBlock(int3 pos, byte blockType)
 	{
-		return new List<T> {v1, v2, v4, v4, v2, v3};
-	}
-
-	private void setBlock(Vector3Int pos, BlockType blockType)
-	{
-		_blocks[pos.x, pos.y, pos.z] = blockType;
+		_blocks[pos.y + pos.z * 256 + pos.x * 4096] = blockType;
 	}
 	
-	public void placeBlock(Vector3Int pos, BlockType blockType)
+	public void placeBlock(int3 pos, byte blockType)
 	{
 		if (pos.y < 0 || pos.y > 255)
 		{
@@ -181,11 +226,16 @@ public class Chunk : MonoBehaviour
 		setBlock(pos, blockType);
 		
 		rebuildMesh();
-		applyMesh();
 	}
 
 	private void OnDestroy()
 	{
 		Destroy(_meshFilter.sharedMesh);
+		if (_vertices.IsCreated)
+		{
+			_vertices.Dispose();
+			_uvs.Dispose();
+			_triangles.Dispose();
+		}
 	}
 }

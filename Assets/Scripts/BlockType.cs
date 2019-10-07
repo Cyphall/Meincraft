@@ -1,22 +1,35 @@
 ﻿using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
 
 public class BlockType
 {
-	public static readonly List<BlockType> ALL = new List<BlockType>();
-	
-	public static readonly BlockType AIR = null;
-	public static readonly BlockType STONE = new BlockType(new Vector2(0.75f, 0f));
-	public static readonly BlockType GRASS = new BlockType(new Vector2(0f, 0f));
-	public static readonly BlockType DIRT = new BlockType(new Vector2(0f, 0.25f));
-	public static readonly BlockType WOOD = new BlockType(new Vector2(0.5f, 0f));
-	public static readonly BlockType IRON = new BlockType(new Vector2(0.25f, 0f));
+	public static Dictionary<byte, BlockType> types;
 
-	public Vector2 uvOffset;
+	public const byte AIR = 0;
+	public const byte STONE = 1;
+	public const byte GRASS = 2;
+	public const byte DIRT = 3;
+	public const byte WOOD = 4;
+	public const byte IRON = 5;
 
-	private BlockType(Vector2 uvOffset)
+	public float2 uvOffset;
+
+	static BlockType()
+	{
+		types = new Dictionary<byte, BlockType>
+		{
+			{AIR, null},
+			{STONE, new BlockType(new Vector2(0.75f, 0f))},
+			{GRASS, new BlockType(new Vector2(0f, 0f))},
+			{DIRT, new BlockType(new Vector2(0f, 0.25f))},
+			{WOOD, new BlockType(new Vector2(0.5f, 0f))},
+			{IRON, new BlockType(new Vector2(0.25f, 0f))}
+		};
+	}
+
+	private BlockType(float2 uvOffset)
 	{
 		this.uvOffset = uvOffset;
-		ALL.Add(this);
 	}
 }

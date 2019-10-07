@@ -1,4 +1,6 @@
 ﻿using System;
+using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -12,11 +14,9 @@ public static class Biomes
 //		seed = new Vector2(4525.1f, 2560.6f);
 	}
 
-	public static BlockType[,,] generateChunkBlocks(Vector2Int chunkPos, Func<Vector2Int, BiomeParams> biome)
+	public static void generateChunkBlocks(NativeArray<byte> blocks, int2 chunkPos, Func<int2, BiomeParams> biome)
 	{
 		BiomeParams biomeParams = biome(chunkPos);
-		
-		BlockType[,,] blocks = new BlockType[16, 256, 16];
 		
 		for (int x = 0; x < 16; x++)
 		{
@@ -27,57 +27,31 @@ public static class Biomes
 				
 				for (int y = 0; y < targetY; y++)
 				{
-					if (targetY > biomeParams.rockMin + (biomeParams.rockMax - biomeParams.rockMin) * getRawNoise(chunkPos, new Vector2Int(x, z), 4) + 0.5f)
+					if (targetY > biomeParams.rockMin + (biomeParams.rockMax - biomeParams.rockMin) * getRawNoise(chunkPos, new int2(x, z), 4) + 0.5f)
 					{
-						blocks[x, y, z] = BlockType.STONE;
+						blocks[y + z * 256 + x * 4096] = BlockType.STONE;
 					}
 					else
 					{
 						if (y < targetY - 4)
 						{
-							blocks[x, y, z] = BlockType.STONE;
+							blocks[y + z * 256 + x * 4096] = BlockType.STONE;
 						}
 						else if (y < targetY - 1)
 						{
-							blocks[x, y, z] = BlockType.DIRT;
+							blocks[y + z * 256 + x * 4096] = BlockType.DIRT;
 						}
 						else
 						{
-							blocks[x, y, z] = BlockType.GRASS;
+							blocks[y + z * 256 + x * 4096] = BlockType.GRASS;
 						}
 					}
 				}
 			}
 		}
-
-		return blocks;
 	}
 	
-	public static BiomeParams mountains(Vector2Int chunkPos)
-	{
-		BiomeParams biomeParams = new BiomeParams
-		{
-			heightMap = new float[16, 16],
-			
-			minY = 60,
-			maxY = 180,
-			
-			rockMin = 120,
-			rockMax = 140
-		};
-		
-		for (int x = 0; x<16; x++)
-		{
-			for (int y = 0; y<16; y++)
-			{
-				biomeParams.heightMap[x, y] = getNoise(chunkPos, new Vector2Int(x, y), 5, 8);
-			}
-		}
-
-		return biomeParams;
-	}
-	
-	public static BiomeParams mountains2(Vector2Int chunkPos)
+	public static BiomeParams mountains(int2 chunkPos)
 	{
 		BiomeParams biomeParams = new BiomeParams
 		{
@@ -96,14 +70,14 @@ public static class Biomes
 		{
 			for (int y = 0; y<16; y++)
 			{
-				biomeParams.heightMap[x, y] = curve.Evaluate(getNoise(chunkPos, new Vector2Int(x, y), 8, 12));
+				biomeParams.heightMap[x, y] = curve.Evaluate(getNoise(chunkPos, new int2(x, y), 8, 12));
 			}
 		}
 
 		return biomeParams;
 	}
 
-	private static float getNoise(Vector2Int chunkPos, Vector2Int blockPos, int octaves, float scale, float lacunarity = 2f, float persistance = 0.5f)
+	private static float getNoise(int2 chunkPos, int2 blockPos, int octaves, float scale, float lacunarity = 2f, float persistance = 0.5f)
 	{
 		float result = 0;
 		
@@ -127,7 +101,7 @@ public static class Biomes
 		return result + 0.5f;
 	}
 	
-	private static float getRawNoise(Vector2Int chunkPos, Vector2Int blockPos, float scale, float frequency = 1f, float amplitude = 1f)
+	private static float getRawNoise(int2 chunkPos, int2 blockPos, float scale, float frequency = 1f, float amplitude = 1f)
 	{
 		float x = (seed.x + chunkPos.x + blockPos.x / 16f) * frequency / scale;
 		float y = (seed.y + chunkPos.y + blockPos.y / 16f) * frequency / scale;

@@ -1,6 +1,5 @@
-﻿using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Threading;
+﻿using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
 
 public class World : MonoBehaviour
@@ -10,12 +9,12 @@ public class World : MonoBehaviour
 	
 	public Player player { get; private set; }
 
-	private Dictionary<Vector2Int, Chunk> _chunks = new Dictionary<Vector2Int, Chunk>();
-	private GenerationQueue _queue = new GenerationQueue();
+	private Dictionary<int2, Chunk> _chunks = new Dictionary<int2, Chunk>();
+	private GenerationQueue _genQueue = new GenerationQueue();
 
-	private List<Vector2Int> _chunkRemoveList = new List<Vector2Int>();
+	private List<int2> _chunkRemoveList = new List<int2>();
 	
-	private const float RENDER_DISTANCE = 8 - 0.1f;
+	private const float RENDER_DISTANCE = 24 - 0.1f;
 
 	private void Start()
 	{
@@ -23,11 +22,11 @@ public class World : MonoBehaviour
 		
 		Biomes.initSeed();
 		
-		player = Instantiate(playerPrefab, new Vector3(8, 256, 8), Quaternion.identity).GetComponent<Player>();
+		player = Instantiate(playerPrefab, new float3(8, 256, 8), Quaternion.identity).GetComponent<Player>();
 		player.setWorld(this);
 	}
 
-	private void createChunk(Vector2Int chunkPos)
+	private void createChunk(int2 chunkPos)
 	{
 		if (_chunks.ContainsKey(chunkPos))
 		{
@@ -41,10 +40,10 @@ public class World : MonoBehaviour
 		
 		chunk.init(chunkPos);
 		
-		_queue.enqueue(chunk);
+		_genQueue.enqueue(chunk);
 	}
 
-	private void destroyChunk(Vector2Int chunkPos)
+	private void destroyChunk(int2 chunkPos)
 	{
 		if (!_chunks.ContainsKey(chunkPos))
 		{
@@ -57,9 +56,9 @@ public class World : MonoBehaviour
 		_chunkRemoveList.Add(chunkPos);
 	}
 
-	public void placeBlock(Vector3Int blockPos, BlockType blockType)
+	public void placeBlock(int3 blockPos, byte blockType)
 	{
-		Vector2Int chunkPos = chunkPosFromBlockPos(blockPos);
+		int2 chunkPos = chunkPosFromBlockPos(blockPos);
 
 		if (!_chunks.ContainsKey(chunkPos))
 		{
@@ -70,9 +69,9 @@ public class World : MonoBehaviour
 		_chunks[chunkPos].placeBlock(localBlockPosFromBlockPos(blockPos), blockType);
 	}
 
-	private static Vector2Int chunkPosFromBlockPos(Vector3Int blockPos)
+	private static int2 chunkPosFromBlockPos(int3 blockPos)
 	{
-		Vector2Int chunkPos = Vector2Int.zero;
+		int2 chunkPos = int2.zero;
 
 		chunkPos.x = Mathf.FloorToInt(blockPos.x / 16.0f);
 		chunkPos.y = Mathf.FloorToInt(blockPos.z / 16.0f);
@@ -80,9 +79,9 @@ public class World : MonoBehaviour
 		return chunkPos;
 	}
 
-	private static Vector3Int localBlockPosFromBlockPos(Vector3Int blockPos)
+	private static int3 localBlockPosFromBlockPos(int3 blockPos)
 	{
-		Vector3Int localBlockPos = Vector3Int.zero;
+		int3 localBlockPos = int3.zero;
 		
 		localBlockPos.x = Mathf.RoundToInt(Mathf.Repeat(blockPos.x, 16));
 		localBlockPos.y = blockPos.y;
@@ -91,9 +90,9 @@ public class World : MonoBehaviour
 		return localBlockPos;
 	}
 	
-	private static Vector2Int chunkPosFromPlayerPos(Vector3 playerPos)
+	private static int2 chunkPosFromPlayerPos(float3 playerPos)
 	{
-		Vector2Int chunkPos = Vector2Int.zero;
+		int2 chunkPos = int2.zero;
 
 		chunkPos.x = Mathf.FloorToInt(playerPos.x / 16.0f);
 		chunkPos.y = Mathf.FloorToInt(playerPos.z / 16.0f);
@@ -103,17 +102,19 @@ public class World : MonoBehaviour
 
 	private void FixedUpdate()
 	{
-		Vector2Int chunkWithPlayer = chunkPosFromPlayerPos(player.transform.position);
+		_genQueue.update();
+		
+		int2 chunkWithPlayer = chunkPosFromPlayerPos(player.transform.position);
 
-		foreach (KeyValuePair<Vector2Int, Chunk> pair in _chunks)
+		foreach (KeyValuePair<int2, Chunk> pair in _chunks)
 		{
-			if (Vector2Int.Distance(pair.Key, chunkWithPlayer) > RENDER_DISTANCE)
+			if (math.distance(pair.Key, chunkWithPlayer) > RENDER_DISTANCE)
 			{
 				destroyChunk(pair.Key);
 			}
 		}
 
-		foreach (Vector2Int chunkPos in _chunkRemoveList)
+		foreach (int2 chunkPos in _chunkRemoveList)
 		{
 			_chunks.Remove(chunkPos);
 		}
@@ -128,10 +129,10 @@ public class World : MonoBehaviour
 				int xSym = chunkWithPlayer.x - (x - chunkWithPlayer.x);
 				int ySym = chunkWithPlayer.y - (y - chunkWithPlayer.y);
 				
-				Vector2Int pos1 = new Vector2Int(x, y);
-				Vector2Int pos2 = new Vector2Int(x, ySym);
-				Vector2Int pos3 = new Vector2Int(xSym, y);
-				Vector2Int pos4 = new Vector2Int(xSym, ySym);
+				int2 pos1 = new int2(x, y);
+				int2 pos2 = new int2(x, ySym);
+				int2 pos3 = new int2(xSym, y);
+				int2 pos4 = new int2(xSym, ySym);
 
 				if (!_chunks.ContainsKey(pos1))
 				{
@@ -155,11 +156,11 @@ public class World : MonoBehaviour
 		if (player.transform.position.y < -10)
 		{
 			Transform pTransform = player.transform;
-			Vector3 position = pTransform.position;
-			pTransform.position = new Vector3(position.x, player.spawnPos.y, position.z);
+			float3 position = pTransform.position;
+			pTransform.position = new float3(position.x, player.spawnPos.y, position.z);
 		}
 		
-		if (_queue.tryDequeue(out Chunk chunk))
+		if (_genQueue.tryDequeue(out Chunk chunk))
 		{
 			if (chunk)
 				chunk.applyMesh();

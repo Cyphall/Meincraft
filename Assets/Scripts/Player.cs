@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using Unity.Mathematics;
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterController), typeof(Camera))]
@@ -6,7 +8,7 @@ public class Player : MonoBehaviour
 {
 	private Camera _camera;
 	private World _world;
-	private BlockType[] _blocks;
+	private byte[] _blocks;
 	private CharacterController _controller;
 	private DynamicFOV _dynamicFOV;
 
@@ -38,7 +40,7 @@ public class Player : MonoBehaviour
 		
 		_controller = GetComponent<CharacterController>();
 
-		_blocks = BlockType.ALL.ToArray();
+		_blocks = BlockType.types.Keys.Skip(1).ToArray();
 	}
 
 	private void Update()
@@ -64,13 +66,14 @@ public class Player : MonoBehaviour
 		bool lookingAtBlock = Physics.Raycast(ray, out RaycastHit raycastHit, 5, 256);
 		if (Input.GetMouseButtonDown(0) && lookingAtBlock)
 		{
-			_world.placeBlock(getBlockLookedAt(raycastHit), BlockType.AIR);
+			Vector3Int vec = getBlockLookedAt(raycastHit);
+			_world.placeBlock(new int3(vec.x, vec.y, vec.z), BlockType.AIR);
 		}
 		if (Input.GetMouseButtonDown(1) && lookingAtBlock)
 		{
 			Vector3Int blockPos = getBlockLookedAt(raycastHit) + Vector3Int.RoundToInt(raycastHit.normal);
 			if (!_controller.bounds.Intersects(new Bounds(blockPos + new Vector3(0.5f, 0.5f, 0.5f), Vector3.one)))
-				_world.placeBlock(blockPos, _blocks[_currentBlockIndex]);
+				_world.placeBlock(new int3(blockPos.x, blockPos.y, blockPos.z), _blocks[_currentBlockIndex]);
 		}
 		
 		
