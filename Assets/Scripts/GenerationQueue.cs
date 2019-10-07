@@ -23,9 +23,9 @@ public class GenerationQueue
 			chunkPos = new int2(chunk.chunkPos.x, chunk.chunkPos.y), // Non modifié par le job
 			blocks = new NativeArray<byte>(65536, Allocator.Persistent),
 			
-			vertices = new NativeList<float3>(Allocator.Persistent),
-			uvs = new NativeList<float2>(Allocator.Persistent),
-			triangles = new NativeList<int>(Allocator.Persistent)
+			vertices = new NativeList<float3>(4096, Allocator.Persistent),
+			uvs = new NativeList<float2>(4096, Allocator.Persistent),
+			triangles = new NativeList<int>(4096, Allocator.Persistent)
 		};
 		
 		ChunkJob job = new ChunkJob

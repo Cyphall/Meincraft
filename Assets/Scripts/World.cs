@@ -14,7 +14,9 @@ public class World : MonoBehaviour
 
 	private List<int2> _chunkRemoveList = new List<int2>();
 	
-	private const float RENDER_DISTANCE = 24 - 0.1f;
+	[SerializeField]
+	[Range(1, 60)]
+	private int renderDistance = 16;
 
 	private void Start()
 	{
@@ -103,12 +105,14 @@ public class World : MonoBehaviour
 	private void FixedUpdate()
 	{
 		_genQueue.update();
+
+		float effectiveRenderDistance = renderDistance - 0.1f;
 		
 		int2 chunkWithPlayer = chunkPosFromPlayerPos(player.transform.position);
 
 		foreach (KeyValuePair<int2, Chunk> pair in _chunks)
 		{
-			if (math.distance(pair.Key, chunkWithPlayer) > RENDER_DISTANCE)
+			if (math.distance(pair.Key, chunkWithPlayer) > effectiveRenderDistance)
 			{
 				destroyChunk(pair.Key);
 			}
@@ -120,11 +124,11 @@ public class World : MonoBehaviour
 		}
 		_chunkRemoveList.Clear();
 
-		for (int x = chunkWithPlayer.x ; x <= chunkWithPlayer.x + RENDER_DISTANCE; x++)
+		for (int x = chunkWithPlayer.x ; x <= chunkWithPlayer.x + effectiveRenderDistance; x++)
 		{
-			for (int y = chunkWithPlayer.y ; y <= chunkWithPlayer.y + RENDER_DISTANCE; y++)
+			for (int y = chunkWithPlayer.y ; y <= chunkWithPlayer.y + effectiveRenderDistance; y++)
 			{
-				if ((chunkWithPlayer.x - x) * (chunkWithPlayer.x - x) + (chunkWithPlayer.y - y) * (chunkWithPlayer.y - y) > RENDER_DISTANCE * RENDER_DISTANCE) continue;
+				if ((chunkWithPlayer.x - x) * (chunkWithPlayer.x - x) + (chunkWithPlayer.y - y) * (chunkWithPlayer.y - y) > effectiveRenderDistance * effectiveRenderDistance) continue;
 				
 				int xSym = chunkWithPlayer.x - (x - chunkWithPlayer.x);
 				int ySym = chunkWithPlayer.y - (y - chunkWithPlayer.y);

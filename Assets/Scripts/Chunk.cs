@@ -61,9 +61,9 @@ public class Chunk : MonoBehaviour
 
 	private void rebuildMesh()
 	{
-		_vertices = new NativeList<float3>(Allocator.Persistent);
-		_uvs = new NativeList<float2>(Allocator.Persistent);
-		_triangles = new NativeList<int>(Allocator.Persistent);
+		_vertices = new NativeList<float3>(4096, Allocator.TempJob);
+		_uvs = new NativeList<float2>(4096, Allocator.TempJob);
+		_triangles = new NativeList<int>(4096, Allocator.TempJob);
 		
 		int vCount = 0;
         
