@@ -21,7 +21,6 @@ public class GenerationQueue
 		_inputQueue.Enqueue(chunk);
 		if (_worker == null || !_worker.IsAlive)
 		{
-			Debug.Log("new");
 			_worker = new Thread(() => task(ref _inputQueue, _outputQueue));
 			_worker.Start();
 		}
