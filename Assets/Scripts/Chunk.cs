@@ -231,11 +231,9 @@ public class Chunk : MonoBehaviour
 	private void OnDestroy()
 	{
 		Destroy(_meshFilter.sharedMesh);
-		if (_vertices.IsCreated)
-		{
-			_vertices.Dispose();
-			_uvs.Dispose();
-			_triangles.Dispose();
-		}
+		
+		if (_vertices.IsCreated) _vertices.Dispose();
+		if (_uvs.IsCreated) _uvs.Dispose();
+		if (_triangles.IsCreated) _triangles.Dispose();
 	}
 }

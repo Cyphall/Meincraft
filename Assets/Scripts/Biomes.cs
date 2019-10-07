@@ -102,10 +102,9 @@ public static class Biomes
 	
 	private static float getRawNoise(int2 chunkPos, int2 blockPos, float scale, float frequency = 1f, float amplitude = 1f)
 	{
-		float x = (seed.x + chunkPos.x + blockPos.x / 16f) * frequency / scale;
-		float y = (seed.y + chunkPos.y + blockPos.y / 16f) * frequency / scale;
+		float2 noisePos = (seed + new float2(chunkPos) + new float2(blockPos) / 16f) * frequency / scale;
 		
-		return (Mathf.InverseLerp(0, 1, Mathf.PerlinNoise(x, y)) - 0.5f) * amplitude;
+		return (Mathf.Clamp(Mathf.PerlinNoise(noisePos.x, noisePos.y), 0, 1) - 0.5f) * amplitude;
 	}
 }
 
