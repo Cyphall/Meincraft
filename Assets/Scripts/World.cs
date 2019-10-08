@@ -14,9 +14,8 @@ public class World : MonoBehaviour
 
 	private List<int2> _chunkRemoveList = new List<int2>();
 	
-	[SerializeField]
 	[Range(1, 60)]
-	private int renderDistance = 16;
+	public int renderDistance = 16;
 
 	private void Start()
 	{
@@ -25,7 +24,6 @@ public class World : MonoBehaviour
 		Biomes.initSeed();
 		
 		player = Instantiate(playerPrefab, new float3(8, 256, 8), Quaternion.identity).GetComponent<Player>();
-		player.setWorld(this);
 	}
 
 	private void createChunk(int2 chunkPos)

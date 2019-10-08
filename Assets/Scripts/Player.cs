@@ -2,12 +2,12 @@
 using System.Linq;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(CharacterController), typeof(Camera))]
 public class Player : MonoBehaviour
 {
 	private Camera _camera;
-	private World _world;
 	private byte[] _blocks;
 	private CharacterController _controller;
 	private DynamicFOV _dynamicFOV;
@@ -23,11 +23,6 @@ public class Player : MonoBehaviour
 	
 	private int _currentBlockIndex;
 	private Vector3 _moveDirection = Vector3.zero;
-
-	public void setWorld(World world)
-	{
-		_world = world;
-	}
 
 	private void Start()
 	{
@@ -45,9 +40,17 @@ public class Player : MonoBehaviour
 
 	private void Update()
 	{
+		if (Keyboard.current.numpadPlusKey.wasPressedThisFrame)
+		{
+			Toolbox.world.renderDistance = Math.Min(Toolbox.world.renderDistance + 1, 60);
+		}
+		if (Keyboard.current.numpadMinusKey.wasPressedThisFrame)
+		{
+			Toolbox.world.renderDistance = Math.Max(Toolbox.world.renderDistance - 1, 1);
+		}
 		
 		// Changement du bloc tenu
-		_currentBlockIndex -= Convert.ToInt32(Input.GetAxis("Mouse ScrollWheel"));
+		_currentBlockIndex -= Convert.ToInt32(Mouse.current.scroll.y.ReadValue()/120);
 		if (_currentBlockIndex < 0) _currentBlockIndex = _blocks.Length-1;
 		if (_currentBlockIndex >= _blocks.Length) _currentBlockIndex = 0;
 		
@@ -56,35 +59,35 @@ public class Player : MonoBehaviour
 		Vector3 angle = _camera.transform.eulerAngles;
 		if (angle.x > 180)
 			angle.x -= 360;
-		angle.x = Mathf.Clamp(angle.x + Input.GetAxis("Mouse Y") * rotationSpeed, -89f, 89f);
+		angle.x = Mathf.Clamp(angle.x - Mouse.current.delta.y.ReadValue() * 0.1f * rotationSpeed, -89f, 89f);
 		_camera.transform.eulerAngles = angle;
-		transform.Rotate(0, Input.GetAxis("Mouse X") * rotationSpeed, 0);
+		transform.Rotate(0, Mouse.current.delta.x.ReadValue() * 0.1f * rotationSpeed, 0);
 
 		
 		// Détection du bloc visé
 		Ray ray = _camera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
 		bool lookingAtBlock = Physics.Raycast(ray, out RaycastHit raycastHit, 5, 256);
-		if (Input.GetMouseButtonDown(0) && lookingAtBlock)
+		if (Mouse.current.leftButton.wasPressedThisFrame && lookingAtBlock)
 		{
 			Vector3Int vec = getBlockLookedAt(raycastHit);
-			_world.placeBlock(new int3(vec.x, vec.y, vec.z), BlockType.AIR);
+			Toolbox.world.placeBlock(new int3(vec.x, vec.y, vec.z), BlockType.AIR);
 		}
-		if (Input.GetMouseButtonDown(1) && lookingAtBlock)
+		if (Mouse.current.rightButton.wasPressedThisFrame && lookingAtBlock)
 		{
 			Vector3Int blockPos = getBlockLookedAt(raycastHit) + Vector3Int.RoundToInt(raycastHit.normal);
 			if (!_controller.bounds.Intersects(new Bounds(blockPos + new Vector3(0.5f, 0.5f, 0.5f), Vector3.one)))
-				_world.placeBlock(new int3(blockPos.x, blockPos.y, blockPos.z), _blocks[_currentBlockIndex]);
+				Toolbox.world.placeBlock(new int3(blockPos.x, blockPos.y, blockPos.z), _blocks[_currentBlockIndex]);
 		}
 		
 		
 		// Déplacements
 		if (_controller.isGrounded)
 		{
-			_moveDirection = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
+			_moveDirection = new Vector3(Keyboard.current.dKey.ReadValue() - Keyboard.current.aKey.ReadValue(), 0, Keyboard.current.wKey.ReadValue() - Keyboard.current.sKey.ReadValue());
 			_moveDirection = transform.TransformDirection(_moveDirection);
 			_moveDirection *= speed;
 			
-			if (Input.GetButton("Sprint"))
+			if (Keyboard.current.leftShiftKey.isPressed)
 			{
 				_moveDirection *= sprintCoef;
 				_dynamicFOV.sprinting = true;
@@ -94,14 +97,14 @@ public class Player : MonoBehaviour
 				_dynamicFOV.sprinting = false;
 			}
 			
-			if (Input.GetButton("Jump"))
+			if (Keyboard.current.spaceKey.isPressed)
 			{
 				_moveDirection.y = jumpSpeed;
 			}
 		}
 		else
 		{
-			Vector3 tempDirection = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
+			Vector3 tempDirection = new Vector3(Keyboard.current.dKey.ReadValue() - Keyboard.current.aKey.ReadValue(), 0, Keyboard.current.wKey.ReadValue() - Keyboard.current.sKey.ReadValue());
 			tempDirection = transform.TransformDirection(tempDirection);
 			tempDirection *= speed;
 		
@@ -121,7 +124,7 @@ public class Player : MonoBehaviour
 		
 		
 		// Zoom
-		_dynamicFOV.zooming = Input.GetButton("Zoom");
+		_dynamicFOV.zooming = Keyboard.current.cKey.isPressed;
 	}
 
 	private static Vector3Int getBlockLookedAt(RaycastHit raycastHit)
