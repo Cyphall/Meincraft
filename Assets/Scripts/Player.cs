@@ -59,9 +59,9 @@ public class Player : MonoBehaviour
 		Vector3 angle = _camera.transform.eulerAngles;
 		if (angle.x > 180)
 			angle.x -= 360;
-		angle.x = Mathf.Clamp(angle.x - Mouse.current.delta.y.ReadValue() * 0.1f * rotationSpeed, -89f, 89f);
+		angle.x = Mathf.Clamp(angle.x - Mouse.current.delta.y.ReadValue() * 0.05f * rotationSpeed, -89f, 89f);
 		_camera.transform.eulerAngles = angle;
-		transform.Rotate(0, Mouse.current.delta.x.ReadValue() * 0.1f * rotationSpeed, 0);
+		transform.Rotate(0, Mouse.current.delta.x.ReadValue() * 0.05f * rotationSpeed, 0);
 
 		
 		// Détection du bloc visé

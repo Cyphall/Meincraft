@@ -5,13 +5,11 @@ using Unity.Mathematics;
 
 public class GenerationQueue
 {
-	private Dictionary<JobHandle, ChunkData> _processingList;
-	private Queue<Chunk> _outputQueue;
+	private List<ChunkData> _processingList;
 
 	public GenerationQueue()
 	{
-		_processingList = new Dictionary<JobHandle, ChunkData>();
-		_outputQueue = new Queue<Chunk>();
+		_processingList = new List<ChunkData>(1024);
 	}
 
 	public void enqueue(Chunk chunk)
@@ -37,43 +35,36 @@ public class GenerationQueue
 			uvs = data.uvs,
 			triangles = data.triangles
 		};
+
+		data.handle = job.Schedule();
 		
-		_processingList.Add(job.Schedule(), data);
+		_processingList.Add(data);
 	}
 
 	public bool tryDequeue(out Chunk chunk)
 	{
-		bool empty = _outputQueue.Count == 0;
-		if (empty)
+		chunk = null;
+		if (_processingList.Count != 0)
 		{
-			chunk = null;
-		}
-		else
-		{
-			chunk = _outputQueue.Dequeue();
-		}
-		return !empty;
-	}
+			ChunkData chunkDataReady = null;
+			foreach (ChunkData data in _processingList)
+			{
+				if (!data.handle.IsCompleted) continue;
+			
+				data.handle.Complete();
+				chunkDataReady = data;
+				break;
+			}
 
-	public void update()
-	{
-		List<JobHandle> toRemove = new List<JobHandle>(); 
+			if (chunkDataReady == null) return false;
 		
-		foreach (KeyValuePair<JobHandle, ChunkData> data in _processingList)
-		{
-			if (!data.Key.IsCompleted) continue;
-			
-			data.Key.Complete();
-			
-			data.Value.chunk.setData(data.Value.blocks, data.Value.vertices, data.Value.uvs, data.Value.triangles);
-			toRemove.Add(data.Key);
-			_outputQueue.Enqueue(data.Value.chunk);
+			chunkDataReady.chunk.setData(chunkDataReady.blocks, chunkDataReady.vertices, chunkDataReady.uvs, chunkDataReady.triangles);
+			_processingList.Remove(chunkDataReady);
+			chunk = chunkDataReady.chunk;
+			return true;
 		}
 
-		foreach (JobHandle handle in toRemove)
-		{
-			_processingList.Remove(handle);
-		}
+		return false;
 	}
 }
 
@@ -237,6 +228,7 @@ internal struct ChunkJob : IJob
 internal class ChunkData
 {
 	public Chunk chunk;
+	public JobHandle handle;
 	
 	public int2 chunkPos;
 	public NativeArray<byte> blocks;

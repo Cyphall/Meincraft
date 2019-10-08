@@ -60,17 +60,15 @@ public static class Biomes
 			minY = 10,
 			maxY = 256,
 			
-			rockMin = 70,
-			rockMax = 85
+			rockMin = 110,
+			rockMax = 130
 		};
-		
-		AnimationCurve curve = new AnimationCurve(new Keyframe(0, 0), new Keyframe(0.5f, 0.1f), new Keyframe(1, 1));
 
 		for (int x = 0; x<16; x++)
 		{
 			for (int y = 0; y<16; y++)
 			{
-				biomeParams.heightMap[x, y] = curve.Evaluate(getNoise(chunkPos, new int2(x, y), 8, 12));
+				biomeParams.heightMap[x, y] = getNoise(chunkPos, new int2(x, y), 8, 8, persistance:0.4f);
 			}
 		}
 

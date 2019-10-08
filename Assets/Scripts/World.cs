@@ -100,10 +100,8 @@ public class World : MonoBehaviour
 		return chunkPos;
 	}
 
-	private void FixedUpdate()
+	private void Update()
 	{
-		_genQueue.update();
-
 		float effectiveRenderDistance = renderDistance - 0.1f;
 		
 		int2 chunkWithPlayer = chunkPosFromPlayerPos(player.transform.position);

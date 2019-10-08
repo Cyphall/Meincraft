@@ -37,7 +37,6 @@ public class Chunk : MonoBehaviour
 		mesh.Optimize();
 
 		mesh.RecalculateNormals();
-		mesh.RecalculateTangents();
 		
 		_meshFilter.sharedMesh = mesh;
 		_meshCollider.sharedMesh = mesh;
@@ -210,17 +209,17 @@ public class Chunk : MonoBehaviour
 
 	private void setBlock(int3 pos, byte blockType)
 	{
-		_blocks[pos.y + pos.z * 256 + pos.x * 4096] = blockType;
-	}
-	
-	public void placeBlock(int3 pos, byte blockType)
-	{
 		if (pos.y < 0 || pos.y > 255)
 		{
 			Debug.LogError("Cannot place a block bellow height 0 or above height 255");
 			return;
 		}
 		
+		_blocks[pos.y + pos.z * 256 + pos.x * 4096] = blockType;
+	}
+	
+	public void placeBlock(int3 pos, byte blockType)
+	{
 		setBlock(pos, blockType);
 		
 		rebuildMesh();
