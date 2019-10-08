@@ -168,6 +168,8 @@ public class World : MonoBehaviour
 		{
 			if (chunk)
 				chunk.applyMesh();
+			else
+				chunk.freeMem();
 		}
 	}
 }

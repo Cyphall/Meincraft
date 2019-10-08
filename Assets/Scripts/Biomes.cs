@@ -11,6 +11,7 @@ public static class Biomes
 	public static void initSeed()
 	{
 		seed = new float2(Random.Range(1f, 10000f), Random.Range(1f, 10000f));
+//		seed = new float2(123.4f, 567.8f);
 	}
 
 	public static void generateChunkBlocks(NativeArray<byte> blocks, int2 chunkPos, Func<int2, BiomeParams> biome)
