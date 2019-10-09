@@ -16,9 +16,9 @@ public class GenerationQueue
 	{
 		ChunkData data = new ChunkData
 		{
-			chunk = chunk, // Non transmis au job
+			chunk = chunk,
 			
-			chunkPos = new int2(chunk.chunkPos.x, chunk.chunkPos.y), // Non modifié par le job
+			chunkPos = new int2(chunk.chunkPos.x, chunk.chunkPos.y),
 			blocks = new NativeArray<byte>(65536, Allocator.Persistent),
 			
 			vertices = new NativeList<float3>(4096, Allocator.Persistent),
@@ -227,9 +227,11 @@ internal struct ChunkJob : IJob
 
 internal class ChunkData
 {
+	// Not passed to jobs
 	public Chunk chunk;
 	public JobHandle handle;
 	
+	// Passed to jobs
 	public int2 chunkPos;
 	public NativeArray<byte> blocks;
 	

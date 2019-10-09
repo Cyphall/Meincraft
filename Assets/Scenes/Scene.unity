@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 1233802666}
-  m_IndirectSpecularColor: {r: 0.40747803, g: 0.47300553, b: 0.57933336, a: 1}
+  m_IndirectSpecularColor: {r: 0.4465832, g: 0.4964162, b: 0.57482153, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -228,8 +228,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 01614664b831546d2ae94a42149d80ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_EventSystem: {fileID: 0}
+  m_InputOverride: {fileID: 0}
+  m_DefaultInput: {fileID: 0}
   m_RepeatDelay: 0.5
   m_RepeatRate: 0.1
+  m_TrackedDeviceDragThresholdMultiplier: 2
+  m_OwnsEnabledState: 0
   m_ActionsAsset: {fileID: -944628639613478452, guid: ca9f5fa95ffab41fb9a615ab714db018,
     type: 3}
   m_PointAction: {fileID: 1054132383583890850, guid: ca9f5fa95ffab41fb9a615ab714db018,
@@ -366,7 +371,6 @@ GameObject:
   m_Component:
   - component: {fileID: 771797649}
   - component: {fileID: 771797650}
-  - component: {fileID: 771797651}
   m_Layer: 0
   m_Name: World
   m_TagString: Untagged
@@ -405,18 +409,6 @@ MonoBehaviour:
   playerPrefab: {fileID: 2958315689580226453, guid: 86cb020d1e4e2614098ccf6b52f23368,
     type: 3}
   renderDistance: 8
---- !u!114 &771797651
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 771797648}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3ed26b86c833d2d4cb5bec2564e258d3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &777435974
 GameObject:
   m_ObjectHideFlags: 0

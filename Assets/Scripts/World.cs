@@ -155,9 +155,7 @@ public class World : MonoBehaviour
 		
 		if (player.transform.position.y < -10)
 		{
-			Transform pTransform = player.transform;
-			float3 position = pTransform.position;
-			pTransform.position = new float3(position.x, player.spawnPos.y, position.z);
+			player.transform.position += new Vector3(0, player.spawnPos.y, 0);
 		}
 		
 		if (_genQueue.tryDequeue(out Chunk chunk))

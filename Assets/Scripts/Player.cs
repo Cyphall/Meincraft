@@ -2,7 +2,6 @@
 using System.Linq;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(CharacterController), typeof(Camera))]
 public class Player : MonoBehaviour
@@ -40,17 +39,9 @@ public class Player : MonoBehaviour
 
 	private void Update()
 	{
-		if (Keyboard.current.numpadPlusKey.wasPressedThisFrame)
-		{
-			Toolbox.world.renderDistance = Math.Min(Toolbox.world.renderDistance + 1, 60);
-		}
-		if (Keyboard.current.numpadMinusKey.wasPressedThisFrame)
-		{
-			Toolbox.world.renderDistance = Math.Max(Toolbox.world.renderDistance - 1, 1);
-		}
 		
 		// Changement du bloc tenu
-		_currentBlockIndex -= Convert.ToInt32(Mouse.current.scroll.y.ReadValue()/120);
+		_currentBlockIndex -= Convert.ToInt32(Input.GetAxis("Mouse ScrollWheel"));
 		if (_currentBlockIndex < 0) _currentBlockIndex = _blocks.Length-1;
 		if (_currentBlockIndex >= _blocks.Length) _currentBlockIndex = 0;
 		
@@ -59,20 +50,20 @@ public class Player : MonoBehaviour
 		Vector3 angle = _camera.transform.eulerAngles;
 		if (angle.x > 180)
 			angle.x -= 360;
-		angle.x = Mathf.Clamp(angle.x - Mouse.current.delta.y.ReadValue() * 0.05f * rotationSpeed, -89f, 89f);
+		angle.x = Mathf.Clamp(angle.x + Input.GetAxis("Mouse Y") * rotationSpeed, -89f, 89f);
 		_camera.transform.eulerAngles = angle;
-		transform.Rotate(0, Mouse.current.delta.x.ReadValue() * 0.05f * rotationSpeed, 0);
+		transform.Rotate(0, Input.GetAxis("Mouse X") * rotationSpeed, 0);
 
 		
 		// Détection du bloc visé
 		Ray ray = _camera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
 		bool lookingAtBlock = Physics.Raycast(ray, out RaycastHit raycastHit, 5, 256);
-		if (Mouse.current.leftButton.wasPressedThisFrame && lookingAtBlock)
+		if (Input.GetMouseButtonDown(0) && lookingAtBlock)
 		{
 			Vector3Int vec = getBlockLookedAt(raycastHit);
 			Toolbox.world.placeBlock(new int3(vec.x, vec.y, vec.z), BlockType.AIR);
 		}
-		if (Mouse.current.rightButton.wasPressedThisFrame && lookingAtBlock)
+		if (Input.GetMouseButtonDown(1) && lookingAtBlock)
 		{
 			Vector3Int blockPos = getBlockLookedAt(raycastHit) + Vector3Int.RoundToInt(raycastHit.normal);
 			if (!_controller.bounds.Intersects(new Bounds(blockPos + new Vector3(0.5f, 0.5f, 0.5f), Vector3.one)))
@@ -83,11 +74,11 @@ public class Player : MonoBehaviour
 		// Déplacements
 		if (_controller.isGrounded)
 		{
-			_moveDirection = new Vector3(Keyboard.current.dKey.ReadValue() - Keyboard.current.aKey.ReadValue(), 0, Keyboard.current.wKey.ReadValue() - Keyboard.current.sKey.ReadValue());
+			_moveDirection = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
 			_moveDirection = transform.TransformDirection(_moveDirection);
 			_moveDirection *= speed;
 			
-			if (Keyboard.current.leftShiftKey.isPressed)
+			if (Input.GetButton("Sprint"))
 			{
 				_moveDirection *= sprintCoef;
 				_dynamicFOV.sprinting = true;
@@ -97,14 +88,14 @@ public class Player : MonoBehaviour
 				_dynamicFOV.sprinting = false;
 			}
 			
-			if (Keyboard.current.spaceKey.isPressed)
+			if (Input.GetButton("Jump"))
 			{
 				_moveDirection.y = jumpSpeed;
 			}
 		}
 		else
 		{
-			Vector3 tempDirection = new Vector3(Keyboard.current.dKey.ReadValue() - Keyboard.current.aKey.ReadValue(), 0, Keyboard.current.wKey.ReadValue() - Keyboard.current.sKey.ReadValue());
+			Vector3 tempDirection = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
 			tempDirection = transform.TransformDirection(tempDirection);
 			tempDirection *= speed;
 		
@@ -124,7 +115,7 @@ public class Player : MonoBehaviour
 		
 		
 		// Zoom
-		_dynamicFOV.zooming = Keyboard.current.cKey.isPressed;
+		_dynamicFOV.zooming = Input.GetButton("Zoom");
 	}
 
 	private static Vector3Int getBlockLookedAt(RaycastHit raycastHit)
