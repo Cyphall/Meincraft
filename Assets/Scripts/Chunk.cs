@@ -33,8 +33,6 @@ public class Chunk : MonoBehaviour
 		mesh.SetVertices<float3>(_vertices);
 		mesh.SetUVs<float2>(0, _uvs);
 		mesh.triangles = _triangles.ToArray();
-		
-		mesh.Optimize();
 
 		mesh.RecalculateNormals();
 		
