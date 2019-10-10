@@ -136,12 +136,17 @@ public class World : MonoBehaviour
 		
 		if (player.transform.position.y < -10)
 		{
-			player.transform.position += new Vector3(0, player.spawnPos.y, 0);
+			Destroy(player.gameObject);
+			player = Instantiate(playerPrefab, new float3(8, 256, 8), Quaternion.identity).GetComponent<Player>();
 		}
 		
 		if (_genQueue.tryDequeue(out Chunk chunk))
 		{
-			chunk.applyMesh();
+			if (chunk)
+			{
+				chunk.applyMesh();
+				Debug.Log("new mesh");
+			}
 		}
 	}
 }

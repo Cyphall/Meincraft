@@ -24,6 +24,7 @@ public class Chunk : MonoBehaviour
 	public void applyMesh()
 	{
 		Destroy(_meshFilter.sharedMesh);
+		Destroy(_meshCollider.sharedMesh);
 		
 		Mesh mesh = new Mesh();
 
@@ -56,9 +57,9 @@ public class Chunk : MonoBehaviour
 
 	private void rebuildMesh()
 	{
-		_vertices = new NativeList<float3>(4096, Allocator.TempJob);
-		_uvs = new NativeList<float2>(4096, Allocator.TempJob);
-		_triangles = new NativeList<int>(4096, Allocator.TempJob);
+		_vertices = new NativeList<float3>(512, Allocator.TempJob);
+		_uvs = new NativeList<float2>(512, Allocator.TempJob);
+		_triangles = new NativeList<int>(512, Allocator.TempJob);
 		
 		int vCount = 0;
         
