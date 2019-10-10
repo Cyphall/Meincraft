@@ -12,7 +12,7 @@ public class World : MonoBehaviour
 	private Dictionary<int2, Chunk> _chunks = new Dictionary<int2, Chunk>();
 	private GenerationQueue _genQueue = new GenerationQueue();
 
-	private List<int2> _chunkRemoveList = new List<int2>();
+	private List<int2> _chunkRemoveList = new List<int2>(64);
 	
 	[Range(1, 60)]
 	public int renderDistance = 16;
@@ -26,12 +26,13 @@ public class World : MonoBehaviour
 		player = Instantiate(playerPrefab, new float3(8, 256, 8), Quaternion.identity).GetComponent<Player>();
 	}
 
-	private void createChunk(int2 chunkPos)
+	private void createChunk(int2 chunkPos, bool overrideAlert = true)
 	{
 		if (_chunks.ContainsKey(chunkPos))
 		{
-			Debug.LogError("A chunk has been overriden without prior deletion");
-			destroyChunk(chunkPos);
+			if (overrideAlert)
+				Debug.LogError("A chunk has been overriden without prior deletion");
+			return;
 		}
 		
 		Chunk chunk = Instantiate(chunkPrefab, new float3(chunkPos.x, 0, chunkPos.y) * 16, Quaternion.identity).GetComponent<Chunk>();
@@ -113,11 +114,8 @@ public class World : MonoBehaviour
 				destroyChunk(pair.Key);
 			}
 		}
-
-		foreach (int2 chunkPos in _chunkRemoveList)
-		{
-			_chunks.Remove(chunkPos);
-		}
+		
+		_chunkRemoveList.ForEach(element => _chunks.Remove(element));
 		_chunkRemoveList.Clear();
 
 		for (int x = chunkWithPlayer.x ; x <= chunkWithPlayer.x + effectiveRenderDistance; x++)
@@ -128,28 +126,11 @@ public class World : MonoBehaviour
 				
 				int xSym = chunkWithPlayer.x - (x - chunkWithPlayer.x);
 				int ySym = chunkWithPlayer.y - (y - chunkWithPlayer.y);
-				
-				int2 pos1 = new int2(x, y);
-				int2 pos2 = new int2(x, ySym);
-				int2 pos3 = new int2(xSym, y);
-				int2 pos4 = new int2(xSym, ySym);
 
-				if (!_chunks.ContainsKey(pos1))
-				{
-					createChunk(pos1);
-				}
-				if (!_chunks.ContainsKey(pos2))
-				{
-					createChunk(pos2);
-				}
-				if (!_chunks.ContainsKey(pos3))
-				{
-					createChunk(pos3);
-				}
-				if (!_chunks.ContainsKey(pos4))
-				{
-					createChunk(pos4);
-				}
+				createChunk(new int2(x, y), false);
+				createChunk(new int2(x, ySym), false);
+				createChunk(new int2(xSym, y), false);
+				createChunk(new int2(xSym, ySym), false);
 			}
 		}
 		

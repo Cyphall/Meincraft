@@ -19,9 +19,6 @@ public class Chunk : MonoBehaviour
 	public void init(int2 pos)
 	{
 		chunkPos = pos;
-		
-		_meshCollider = GetComponent<MeshCollider>();
-		_meshFilter = GetComponent<MeshFilter>();
 	}
 
 	public void applyMesh()
@@ -46,6 +43,9 @@ public class Chunk : MonoBehaviour
 
 	public void setData(NativeArray<byte> blocks, NativeList<float3> vertices, NativeList<float2> uvs, NativeList<int> triangles)
 	{
+		_meshCollider = GetComponent<MeshCollider>();
+		_meshFilter = GetComponent<MeshFilter>();
+		
 		_blocks = blocks.ToArray();
 		blocks.Dispose();
 		
