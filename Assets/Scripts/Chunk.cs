@@ -232,7 +232,8 @@ public class Chunk : MonoBehaviour
 
 	private void OnDestroy()
 	{
-		Destroy(_meshFilter.sharedMesh);
+		if (_meshFilter) Destroy(_meshFilter.sharedMesh);
+		if (_meshCollider) Destroy(_meshCollider.sharedMesh);
 		
 		freeMem();
 	}
