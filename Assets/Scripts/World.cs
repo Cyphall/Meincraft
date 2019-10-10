@@ -141,10 +141,7 @@ public class World : MonoBehaviour
 		
 		if (_genQueue.tryDequeue(out Chunk chunk))
 		{
-			if (chunk)
-				chunk.applyMesh();
-			else
-				chunk.freeMem();
+			chunk.applyMesh();
 		}
 	}
 }

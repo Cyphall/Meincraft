@@ -28,9 +28,9 @@ public class LeftInfosDisplay : MonoBehaviour
 			if (Toolbox.world.player)
 			{
 				float3 playerPos = Toolbox.world.player.transform.position;
-				_posX.text = $"X: {(int) playerPos.x}";
-				_posY.text = $"X: {(int) playerPos.y}";
-				_posZ.text = $"X: {(int) playerPos.z}";
+				_posX.text = $"X: {Mathf.FloorToInt(playerPos.x)}";
+				_posY.text = $"X: {Mathf.FloorToInt(playerPos.y)}";
+				_posZ.text = $"X: {Mathf.FloorToInt(playerPos.z)}";
 			}
 		}
 	}

@@ -38,7 +38,7 @@ public class Chunk : MonoBehaviour
 		
 		mesh.UploadMeshData(true);
 
-		freeMem();
+		freeMeshArrays();
 	}
 
 	public void setData(NativeArray<byte> blocks, NativeList<float3> vertices, NativeList<float2> uvs, NativeList<int> triangles)
@@ -223,7 +223,7 @@ public class Chunk : MonoBehaviour
 		rebuildMesh();
 	}
 
-	public void freeMem()
+	public void freeMeshArrays()
 	{
 		if (_vertices.IsCreated) _vertices.Dispose();
 		if (_uvs.IsCreated) _uvs.Dispose();
@@ -235,6 +235,6 @@ public class Chunk : MonoBehaviour
 		if (_meshFilter) Destroy(_meshFilter.sharedMesh);
 		if (_meshCollider) Destroy(_meshCollider.sharedMesh);
 		
-		freeMem();
+		freeMeshArrays();
 	}
 }

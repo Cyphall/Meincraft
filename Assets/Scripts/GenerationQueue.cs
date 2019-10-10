@@ -2,6 +2,7 @@
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using UnityEngine;
 
 public class GenerationQueue
 {
@@ -44,27 +45,36 @@ public class GenerationQueue
 	public bool tryDequeue(out Chunk chunk)
 	{
 		chunk = null;
-		if (_processingList.Count != 0)
+		while (true)
 		{
+			if (_processingList.Count == 0) return false;
+			
 			ChunkData chunkDataReady = null;
 			foreach (ChunkData data in _processingList)
 			{
 				if (!data.handle.IsCompleted) continue;
-			
+
 				data.handle.Complete();
 				chunkDataReady = data;
 				break;
 			}
 
 			if (chunkDataReady == null) return false;
-		
-			chunkDataReady.chunk.setData(chunkDataReady.blocks, chunkDataReady.vertices, chunkDataReady.uvs, chunkDataReady.triangles);
+			
 			_processingList.Remove(chunkDataReady);
+			if (!chunkDataReady.chunk)
+			{
+				chunkDataReady.blocks.Dispose();
+				chunkDataReady.vertices.Dispose();
+				chunkDataReady.uvs.Dispose();
+				chunkDataReady.triangles.Dispose();
+				continue;
+			}
+
+			chunkDataReady.chunk.setData(chunkDataReady.blocks, chunkDataReady.vertices, chunkDataReady.uvs, chunkDataReady.triangles);
 			chunk = chunkDataReady.chunk;
 			return true;
 		}
-
-		return false;
 	}
 }
 
