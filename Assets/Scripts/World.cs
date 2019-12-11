@@ -13,6 +13,7 @@ public class World : MonoBehaviour
 	private GenerationQueue _genQueue = new GenerationQueue();
 
 	private List<int2> _chunkRemoveList = new List<int2>(64);
+	private List<int2> _chunksToCreate = new List<int2>(104);
 	
 	[Range(1, 60)]
 	public int renderDistance = 16;
@@ -117,22 +118,37 @@ public class World : MonoBehaviour
 		
 		_chunkRemoveList.ForEach(element => _chunks.Remove(element));
 		_chunkRemoveList.Clear();
+		
+		
+		if (_chunks.Count == 0)
+			_chunksToCreate.Add(chunkWithPlayer);
 
-		for (int x = chunkWithPlayer.x ; x <= chunkWithPlayer.x + effectiveRenderDistance; x++)
+		foreach (KeyValuePair<int2, Chunk> pair in _chunks)
 		{
-			for (int y = chunkWithPlayer.y ; y <= chunkWithPlayer.y + effectiveRenderDistance; y++)
-			{
-				if ((chunkWithPlayer.x - x) * (chunkWithPlayer.x - x) + (chunkWithPlayer.y - y) * (chunkWithPlayer.y - y) > effectiveRenderDistance * effectiveRenderDistance) continue;
-				
-				int xSym = chunkWithPlayer.x - (x - chunkWithPlayer.x);
-				int ySym = chunkWithPlayer.y - (y - chunkWithPlayer.y);
+			int2 xpos = pair.Key + new int2(1, 0);
+			if (!_chunksToCreate.Contains(xpos) && !_chunks.ContainsKey(xpos) && math.distance(xpos, chunkWithPlayer) < renderDistance)
+				_chunksToCreate.Add(xpos);
 
-				createChunk(new int2(x, y), false);
-				createChunk(new int2(x, ySym), false);
-				createChunk(new int2(xSym, y), false);
-				createChunk(new int2(xSym, ySym), false);
-			}
+			int2 xneg = pair.Key + new int2(-1, 0);
+			if (!_chunksToCreate.Contains(xneg) && !_chunks.ContainsKey(xneg) && math.distance(xneg, chunkWithPlayer) < renderDistance)
+				_chunksToCreate.Add(xneg);
+				
+			int2 ypos = pair.Key + new int2(0, 1);
+			if (!_chunksToCreate.Contains(ypos) && !_chunks.ContainsKey(ypos) && math.distance(ypos, chunkWithPlayer) < renderDistance)
+				_chunksToCreate.Add(ypos);
+			
+			int2 yneg = pair.Key + new int2(0, -1);
+			if (!_chunksToCreate.Contains(yneg) && !_chunks.ContainsKey(yneg) && math.distance(yneg, chunkWithPlayer) < renderDistance)
+				_chunksToCreate.Add(yneg);
+
+			// Limit: 100 new chunks per frame
+			if (_chunksToCreate.Count > 100) break;
 		}
+		
+		_chunksToCreate.ForEach(c => createChunk(c, false));
+		
+		_chunksToCreate.Clear();
+		
 		
 		if (player.transform.position.y < -10)
 		{
@@ -145,7 +161,6 @@ public class World : MonoBehaviour
 			if (chunk)
 			{
 				chunk.applyMesh();
-				Debug.Log("new mesh");
 			}
 		}
 	}

@@ -2,11 +2,10 @@
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
-using UnityEngine;
 
 public class GenerationQueue
 {
-	private List<ChunkData> _processingList;
+	private readonly List<ChunkData> _processingList;
 
 	public GenerationQueue()
 	{
