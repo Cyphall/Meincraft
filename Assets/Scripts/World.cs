@@ -151,10 +151,7 @@ public class World : MonoBehaviour
 		}
 
 		if (_chunks.Count == 0)
-		{
 			createChunk(chunkWithPlayer);
-		}
-		Debug.Log(_chunks.Count);
 		
 		if (player.transform.position.y < -10)
 		{

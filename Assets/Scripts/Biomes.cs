@@ -22,22 +22,23 @@ public static class Biomes
 		{
 			for (int z = 0; z < 16; z++)
 			{
-				int targetY = biomeParams.minY + (int) (biomeParams.heightMap[x, z] * (biomeParams.maxY - biomeParams.minY));
-				targetY = Math.Min(targetY, 256);
+				int surfaceHeight = biomeParams.minY + (int) (biomeParams.heightMap[x, z] * (biomeParams.maxY - biomeParams.minY));
+				surfaceHeight = Math.Min(surfaceHeight, 256);
+				int fullRockHeight = biomeParams.rockMin + (int) (biomeParams.fullRockHeightMap[x, z] * (biomeParams.rockMax - biomeParams.rockMin));
 				
-				for (int y = 0; y < targetY; y++)
+				for (int y = 0; y < surfaceHeight; y++)
 				{
-					if (targetY > biomeParams.rockMin + (biomeParams.rockMax - biomeParams.rockMin) * getRawNoise(chunkPos, new int2(x, z), 4) + 0.5f)
+					if (surfaceHeight > fullRockHeight)
 					{
 						blocks[y + z * 256 + x * 4096] = BlockType.STONE;
 					}
 					else
 					{
-						if (y < targetY - 4)
+						if (y < surfaceHeight - 4)
 						{
 							blocks[y + z * 256 + x * 4096] = BlockType.STONE;
 						}
-						else if (y < targetY - 1)
+						else if (y < surfaceHeight - 1)
 						{
 							blocks[y + z * 256 + x * 4096] = BlockType.DIRT;
 						}
@@ -56,6 +57,7 @@ public static class Biomes
 		BiomeParams biomeParams = new BiomeParams
 		{
 			heightMap = new float[16, 16],
+			fullRockHeightMap = new float[16, 16],
 			
 			minY = 10,
 			maxY = 256,
@@ -69,6 +71,7 @@ public static class Biomes
 			for (int y = 0; y<16; y++)
 			{
 				biomeParams.heightMap[x, y] = getNoise(chunkPos, new int2(x, y), 8, 8, persistance:0.4f);
+				biomeParams.fullRockHeightMap[x, y] = getNoise(chunkPos, new int2(x, y), 1, 4);
 			}
 		}
 
@@ -110,9 +113,11 @@ public static class Biomes
 public struct BiomeParams
 {
 	public float[,] heightMap;
+	public float[,] fullRockHeightMap;
+	
 	public int minY;
 	public int maxY;
-
+	
 	public int rockMin;
 	public int rockMax;
 }
