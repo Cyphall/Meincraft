@@ -14,7 +14,7 @@ public class World : MonoBehaviour
 
 	private List<int2> _chunkRemoveList = new List<int2>(64);
 	
-	[Range(1, 60)]
+	[Range(1, 32)]
 	public int renderDistance = 16;
 
 	private void Start()
@@ -26,12 +26,11 @@ public class World : MonoBehaviour
 		player = Instantiate(playerPrefab, new float3(8, 256, 8), Quaternion.identity).GetComponent<Player>();
 	}
 
-	private void createChunk(int2 chunkPos, bool overrideAlert = true)
+	private void createChunk(int2 chunkPos, bool checkOverride = true)
 	{
-		if (_chunks.ContainsKey(chunkPos))
+		if (checkOverride && _chunks.ContainsKey(chunkPos))
 		{
-			if (overrideAlert)
-				Debug.LogError("A chunk has been overriden without prior deletion");
+			Debug.LogError("A chunk has been overriden without prior deletion");
 			return;
 		}
 		
@@ -124,34 +123,34 @@ public class World : MonoBehaviour
 			int2 xpos = pair.Key + new int2(1, 0);
 			if (!_chunks.ContainsKey(xpos) && math.distance(xpos, chunkWithPlayer) < renderDistance)
 			{
-				createChunk(xpos);
+				createChunk(xpos, false);
 				break;
 			}
 
 			int2 xneg = pair.Key + new int2(-1, 0);
 			if (!_chunks.ContainsKey(xneg) && math.distance(xneg, chunkWithPlayer) < renderDistance)
 			{
-				createChunk(xneg);
+				createChunk(xneg, false);
 				break;
 			}
 				
 			int2 ypos = pair.Key + new int2(0, 1);
 			if (!_chunks.ContainsKey(ypos) && math.distance(ypos, chunkWithPlayer) < renderDistance)
 			{
-				createChunk(ypos);
+				createChunk(ypos, false);
 				break;
 			}
 			
 			int2 yneg = pair.Key + new int2(0, -1);
 			if (!_chunks.ContainsKey(yneg) && math.distance(yneg, chunkWithPlayer) < renderDistance)
 			{
-				createChunk(yneg);
+				createChunk(yneg, false);
 				break;
 			}
 		}
 
 		if (_chunks.Count == 0)
-			createChunk(chunkWithPlayer);
+			createChunk(chunkWithPlayer, false);
 		
 		if (player.transform.position.y < -10)
 		{
