@@ -22,8 +22,7 @@ public static class Biomes
 		{
 			for (int z = 0; z < 16; z++)
 			{
-				int surfaceHeight = biomeParams.minY + (int) (biomeParams.heightMap[x, z] * (biomeParams.maxY - biomeParams.minY));
-				surfaceHeight = Math.Min(surfaceHeight, 256);
+				int surfaceHeight = Math.Min(biomeParams.minY + (int) (biomeParams.heightMap[x, z] * (biomeParams.maxY - biomeParams.minY)), 256);
 				int fullRockHeight = biomeParams.rockMin + (int) (biomeParams.fullRockHeightMap[x, z] * (biomeParams.rockMax - biomeParams.rockMin));
 				
 				for (int y = 0; y < surfaceHeight; y++)
