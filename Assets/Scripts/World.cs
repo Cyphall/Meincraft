@@ -13,7 +13,6 @@ public class World : MonoBehaviour
 	private GenerationQueue _genQueue = new GenerationQueue();
 
 	private List<int2> _chunkRemoveList = new List<int2>(64);
-	private List<int2> _chunksToCreate = new List<int2>(104);
 	
 	[Range(1, 60)]
 	public int renderDistance = 16;
@@ -119,36 +118,43 @@ public class World : MonoBehaviour
 		_chunkRemoveList.ForEach(element => _chunks.Remove(element));
 		_chunkRemoveList.Clear();
 		
-		
-		if (_chunks.Count == 0)
-			_chunksToCreate.Add(chunkWithPlayer);
 
 		foreach (KeyValuePair<int2, Chunk> pair in _chunks)
 		{
 			int2 xpos = pair.Key + new int2(1, 0);
-			if (!_chunksToCreate.Contains(xpos) && !_chunks.ContainsKey(xpos) && math.distance(xpos, chunkWithPlayer) < renderDistance)
-				_chunksToCreate.Add(xpos);
+			if (!_chunks.ContainsKey(xpos) && math.distance(xpos, chunkWithPlayer) < renderDistance)
+			{
+				createChunk(xpos);
+				break;
+			}
 
 			int2 xneg = pair.Key + new int2(-1, 0);
-			if (!_chunksToCreate.Contains(xneg) && !_chunks.ContainsKey(xneg) && math.distance(xneg, chunkWithPlayer) < renderDistance)
-				_chunksToCreate.Add(xneg);
+			if (!_chunks.ContainsKey(xneg) && math.distance(xneg, chunkWithPlayer) < renderDistance)
+			{
+				createChunk(xneg);
+				break;
+			}
 				
 			int2 ypos = pair.Key + new int2(0, 1);
-			if (!_chunksToCreate.Contains(ypos) && !_chunks.ContainsKey(ypos) && math.distance(ypos, chunkWithPlayer) < renderDistance)
-				_chunksToCreate.Add(ypos);
+			if (!_chunks.ContainsKey(ypos) && math.distance(ypos, chunkWithPlayer) < renderDistance)
+			{
+				createChunk(ypos);
+				break;
+			}
 			
 			int2 yneg = pair.Key + new int2(0, -1);
-			if (!_chunksToCreate.Contains(yneg) && !_chunks.ContainsKey(yneg) && math.distance(yneg, chunkWithPlayer) < renderDistance)
-				_chunksToCreate.Add(yneg);
-
-			// Limit: 100 new chunks per frame
-			if (_chunksToCreate.Count > 100) break;
+			if (!_chunks.ContainsKey(yneg) && math.distance(yneg, chunkWithPlayer) < renderDistance)
+			{
+				createChunk(yneg);
+				break;
+			}
 		}
-		
-		_chunksToCreate.ForEach(c => createChunk(c, false));
-		
-		_chunksToCreate.Clear();
-		
+
+		if (_chunks.Count == 0)
+		{
+			createChunk(chunkWithPlayer);
+		}
+		Debug.Log(_chunks.Count);
 		
 		if (player.transform.position.y < -10)
 		{

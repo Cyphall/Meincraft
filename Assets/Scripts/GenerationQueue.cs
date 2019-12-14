@@ -6,14 +6,27 @@ using Unity.Mathematics;
 public class GenerationQueue
 {
 	private readonly List<ChunkData> _processingList;
+	private readonly Queue<Chunk> _waitingQueue;
 
 	public GenerationQueue()
 	{
-		_processingList = new List<ChunkData>(1024);
+		_processingList = new List<ChunkData>(16);
+		_waitingQueue = new Queue<Chunk>();
 	}
 
 	public void enqueue(Chunk chunk)
 	{
+		_waitingQueue.Enqueue(chunk);
+		
+		createJob();
+	}
+
+	private void createJob()
+	{
+		if (_waitingQueue.Count == 0 || _processingList.Count >= 16) return;
+		
+		Chunk chunk = _waitingQueue.Dequeue();
+		
 		ChunkData data = new ChunkData
 		{
 			chunk = chunk,
@@ -57,8 +70,10 @@ public class GenerationQueue
 		}
 
 		if (chunkDataReady == null) return false;
-		
+
 		_processingList.Remove(chunkDataReady);
+		createJob();
+		
 		if (!chunkDataReady.chunk)
 		{
 			chunkDataReady.blocks.Dispose();
